@@ -153,13 +153,11 @@ function withoutInlineCodeAndHtmlComments(markdown) {
 
       if (closingEnd >= 0) {
         if (isAtxH2HeadingLine(index)) {
-          // Inline code is part of an ATX heading's title. Ignore its
-          // delimiters, but retain the code text so equivalent heading
-          // spellings match the template (e.g. ## `変更内容`).
+          // Inline code is part of an ATX heading's title. Drop its delimiters
+          // without adding replacement spaces, preserving the exact title text
+          // (including the spacing around code spans).
           const closingStart = closingEnd - delimiterLength;
-          maskRange(index, openingEnd);
           output.push(source.slice(openingEnd, closingStart));
-          maskRange(closingStart, closingEnd);
         } else {
           // Elsewhere, code spans are masked to prevent heading-like content
           // inside inline code from being counted as a real section.
