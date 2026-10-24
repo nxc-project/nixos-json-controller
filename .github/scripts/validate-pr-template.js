@@ -333,7 +333,12 @@ function withoutRawHtmlBlocks(markdown) {
 
     // Outside raw HTML, fenced code blocks take precedence over HTML parsing.
     if (activeFence) {
-      const closing = line.match(new RegExp("^ {0,3}(" + grave + "+|~+)[ \\t]*$"));
+      // A fence nested in a list item may be indented to the list item's
+      // content column (plus the usual three-space fence allowance).
+      const maxFenceIndent = activeFence.listContentIndent === undefined
+        ? 3
+        : activeFence.listContentIndent + 3;
+      const closing = line.match(new RegExp("^ {0," + maxFenceIndent + "}(" + grave + "+|~+)[ \\t]*$"));
       if (
         closing &&
         closing[1][0] === activeFence.character &&
@@ -344,6 +349,29 @@ function withoutRawHtmlBlocks(markdown) {
       visibleLines.push("");
       paragraphOpen = false;
       continue;
+    }
+
+    // CommonMark allows a fenced code block to begin immediately after a
+    // list marker. Mask the opening list item line and its following fenced
+    // content as a single block; otherwise an apparent H2 inside it could
+    // incorrectly satisfy a required PR-template section.
+    const listFenceOpening = line.match(new RegExp("^( {0,3})([-+*]|[0-9]{1,9}[.)])([ ]{1,4})(" + grave + "{3,}|~{3,})(.*)$"));
+    if (listFenceOpening) {
+      const character = listFenceOpening[4][0];
+      const info = listFenceOpening[5];
+      if (!(character === grave && info.includes(grave))) {
+        activeFence = {
+          character,
+          length: listFenceOpening[4].length,
+          listContentIndent:
+            listFenceOpening[1].length +
+            listFenceOpening[2].length +
+            listFenceOpening[3].length,
+        };
+        visibleLines.push("");
+        paragraphOpen = false;
+        continue;
+      }
     }
 
     const opening = line.match(new RegExp("^ {0,3}(" + grave + "{3,}|~{3,})(.*)$"));
@@ -459,6 +487,77 @@ function withoutRawHtmlBlocks(markdown) {
 
   return visibleLines.join("\n");
 }
+function stripInlineLinks(text) {
+  const source = String(text || "");
+  let output = "";
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    let open = source.indexOf("[", cursor);
+    while (open >= 0) {
+      let slashCount = 0;
+      for (let index = open - 1; index >= 0 && source[index] === "\\"; index -= 1) {
+        slashCount += 1;
+      }
+      if (slashCount % 2 === 0 && !(open > 0 && source[open - 1] === "!")) {
+        break;
+      }
+      open = source.indexOf("[", open + 1);
+    }
+
+    if (open < 0) {
+      output += source.slice(cursor);
+      break;
+    }
+
+    let depth = 1;
+    let labelEnd = open + 1;
+    while (labelEnd < source.length && depth > 0) {
+      if (source[labelEnd] === "\\") {
+        labelEnd += 2;
+        continue;
+      }
+      if (source[labelEnd] === "[") depth += 1;
+      if (source[labelEnd] === "]") depth -= 1;
+      if (depth > 0) labelEnd += 1;
+    }
+
+    if (depth !== 0) {
+      output += source.slice(cursor);
+      break;
+    }
+
+    if (source[labelEnd + 1] !== "(") {
+      output += source.slice(cursor, labelEnd + 1);
+      cursor = labelEnd + 1;
+      continue;
+    }
+
+    depth = 1;
+    let linkEnd = labelEnd + 2;
+    while (linkEnd < source.length && depth > 0) {
+      if (source[linkEnd] === "\\") {
+        linkEnd += 2;
+        continue;
+      }
+      if (source[linkEnd] === "(") depth += 1;
+      if (source[linkEnd] === ")") depth -= 1;
+      if (depth > 0) linkEnd += 1;
+    }
+
+    if (depth !== 0) {
+      output += source.slice(cursor, labelEnd + 1);
+      cursor = labelEnd + 1;
+      continue;
+    }
+
+    output += source.slice(cursor, open) + source.slice(open + 1, labelEnd);
+    cursor = linkEnd + 1;
+  }
+
+  return output;
+}
+
 function stripInlineEmphasis(text) {
   // Normalize simple CommonMark emphasis and strong-emphasis delimiters so
   // headings with equivalent rendered text compare equally.
@@ -483,11 +582,11 @@ function normalizeInlineHeadingText(text) {
   while (cursor < text.length) {
     const codeStart = text.indexOf(INLINE_CODE_TEXT_START, cursor);
     if (codeStart < 0) {
-      segments.push(stripInlineEmphasis(text.slice(cursor)));
+      segments.push(stripInlineEmphasis(stripInlineLinks(text.slice(cursor))));
       break;
     }
 
-    segments.push(stripInlineEmphasis(text.slice(cursor, codeStart)));
+    segments.push(stripInlineEmphasis(stripInlineLinks(text.slice(cursor, codeStart))));
     const codeContentStart = codeStart + INLINE_CODE_TEXT_START.length;
     const codeEnd = text.indexOf(INLINE_CODE_TEXT_END, codeContentStart);
     if (codeEnd < 0) {

@@ -929,3 +929,49 @@ test("emphasis characters inside inline code in H2 titles remain literal", () =>
     "受け入れ条件との対応",
   ]);
 });
+
+
+test("fenced code blocks opened inside list items cannot satisfy required sections", () => {
+  const fence = String.fromCharCode(96).repeat(3);
+  const headingTemplate = ["## Why", "## 補足・設計詳細"].join("\n");
+
+  for (const marker of ["- ", "1. "]) {
+    const body = [
+      "## Why",
+      "Reason.",
+      marker + fence + "markdown",
+      "  ## 補足・設計詳細",
+      "  " + fence,
+    ].join("\n");
+    const result = validatePullRequestBody(headingTemplate, body);
+
+    assert.equal(result.ok, false, marker);
+    assert.deepEqual(result.missingHeadings, ["補足・設計詳細"], marker);
+    assert.deepEqual(extractH2Headings(body), ["Why"], marker);
+  }
+});
+
+test("inline links in H2 titles normalize to their rendered link text", () => {
+  const headingTemplate = [
+    "## Why",
+    "## 変更内容",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+  const body = [
+    "## [Why](#details)",
+    "Reason.",
+    '## [変更内容](https://example.com/path_(section) "title")',
+    "Changed.",
+    "## [受け入れ条件との対応](#acceptance)",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(headingTemplate, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
