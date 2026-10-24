@@ -64,7 +64,7 @@ function withoutInlineCodeAndHtmlComments(markdown) {
   }
 
   function rawHtmlTagEnd(startIndex) {
-    const opening = source.slice(startIndex).match(/^<\/?[A-Za-z][A-Za-z0-9-]*(?=[\\s/>])/);
+    const opening = source.slice(startIndex).match(/^<\/?[A-Za-z][A-Za-z0-9-]*(?=[\s/>])/);
     if (!opening) {
       return -1;
     }
