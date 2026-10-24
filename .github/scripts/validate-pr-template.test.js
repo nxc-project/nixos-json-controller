@@ -785,3 +785,33 @@ test("malformed HTML attributes do not start a raw HTML block", () => {
     ], tag);
   }
 });
+
+
+test("valid HTML attributes still start a raw HTML block", () => {
+  for (const tag of [
+    "<custom-tag disabled>",
+    "<custom-tag disabled checked>",
+    "<custom-tag foo = bar>",
+    '<custom-tag title="a > b" data-key=value>',
+  ]) {
+    const body = [
+      "## Why",
+      "Reason.",
+      "",
+      tag,
+      "## 変更内容",
+      "Still inside the raw HTML block.",
+      "",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(template, body);
+
+    assert.equal(result.ok, false, tag);
+    assert.deepEqual(result.missingHeadings, ["変更内容"], tag);
+    assert.deepEqual(extractH2Headings(body), [
+      "Why",
+      "受け入れ条件との対応",
+    ], tag);
+  }
+});
