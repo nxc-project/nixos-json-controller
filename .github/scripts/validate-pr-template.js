@@ -1,5 +1,8 @@
 "use strict";
 
+const INLINE_CODE_TEXT_START = String.fromCharCode(0xe000);
+const INLINE_CODE_TEXT_END = String.fromCharCode(0xe001);
+
 function withoutInlineCodeAndHtmlComments(markdown) {
   const source = String(markdown || "");
   const output = [];
@@ -157,7 +160,13 @@ function withoutInlineCodeAndHtmlComments(markdown) {
           // without adding replacement spaces, preserving the exact title text
           // (including the spacing around code spans).
           const closingStart = closingEnd - delimiterLength;
-          output.push(source.slice(openingEnd, closingStart));
+          // Preserve code-span text as literal heading content, marked so
+          // emphasis normalization does not interpret '*' or '_' inside it.
+          output.push(
+            INLINE_CODE_TEXT_START +
+            source.slice(openingEnd, closingStart) +
+            INLINE_CODE_TEXT_END,
+          );
         } else {
           // Elsewhere, code spans are masked to prevent heading-like content
           // inside inline code from being counted as a real section.
@@ -450,6 +459,49 @@ function withoutRawHtmlBlocks(markdown) {
 
   return visibleLines.join("\n");
 }
+function stripInlineEmphasis(text) {
+  // Normalize simple CommonMark emphasis and strong-emphasis delimiters so
+  // headings with equivalent rendered text compare equally.
+  let normalized = text;
+  let previous;
+  do {
+    previous = normalized;
+    normalized = normalized.replace(/(?<!\\)(\*{1,3})(?=\S)(.+?)(?<=\S)\1/g, "$2");
+    // Underscore emphasis cannot open or close within an alphanumeric word.
+    normalized = normalized.replace(
+      /(?<![\p{L}\p{N}])(_{1,3})(?=\S)(.+?)(?<=\S)\1(?![\p{L}\p{N}])/gu,
+      "$2",
+    );
+  } while (normalized !== previous);
+  return normalized;
+}
+
+function normalizeInlineHeadingText(text) {
+  const segments = [];
+  let cursor = 0;
+
+  while (cursor < text.length) {
+    const codeStart = text.indexOf(INLINE_CODE_TEXT_START, cursor);
+    if (codeStart < 0) {
+      segments.push(stripInlineEmphasis(text.slice(cursor)));
+      break;
+    }
+
+    segments.push(stripInlineEmphasis(text.slice(cursor, codeStart)));
+    const codeContentStart = codeStart + INLINE_CODE_TEXT_START.length;
+    const codeEnd = text.indexOf(INLINE_CODE_TEXT_END, codeContentStart);
+    if (codeEnd < 0) {
+      segments.push(text.slice(codeContentStart));
+      break;
+    }
+
+    segments.push(text.slice(codeContentStart, codeEnd));
+    cursor = codeEnd + INLINE_CODE_TEXT_END.length;
+  }
+
+  return segments.join("");
+}
+
 function extractH2Headings(markdown) {
   const headings = [];
 
@@ -461,7 +513,8 @@ function extractH2Headings(markdown) {
       continue;
     }
 
-    const heading = match[1].replace(/[ \t]+#+[ \t]*$/, "").trim();
+    const rawHeading = match[1].replace(/[ \t]+#+[ \t]*$/, "").trim();
+    const heading = normalizeInlineHeadingText(rawHeading).trim();
     if (heading) {
       headings.push(heading);
     }

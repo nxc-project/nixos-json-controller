@@ -876,3 +876,56 @@ test("inline code spans in the middle of H2 titles retain their text", () => {
     ["Why", "受け入れ条件との対応"],
   );
 });
+
+
+test("emphasis and strong emphasis in H2 titles normalize to rendered heading text", () => {
+  const headingTemplate = [
+    "## Why",
+    "## 変更内容",
+    "## 受け入れ条件との対応",
+    "## 変更対象は nxc のみ",
+  ].join("\n");
+  const body = [
+    "## *Why*",
+    "Reason.",
+    "## **変更内容**",
+    "Changed.",
+    "## __受け入れ条件との対応__",
+    "Done.",
+    "## 変更対象は **nxc** のみ",
+  ].join("\n");
+  const result = validatePullRequestBody(headingTemplate, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+    "変更対象は nxc のみ",
+  ]);
+});
+
+test("emphasis characters inside inline code in H2 titles remain literal", () => {
+  const tick = String.fromCharCode(96);
+  const heading = "## " + tick + "*literal* and _literal_" + tick;
+  const headingTemplate = [
+    "## Why",
+    heading,
+    "## 受け入れ条件との対応",
+  ].join("\n");
+  const body = [
+    "## Why",
+    heading,
+    "## 受け入れ条件との対応",
+  ].join("\n");
+  const result = validatePullRequestBody(headingTemplate, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "*literal* and _literal_",
+    "受け入れ条件との対応",
+  ]);
+});
