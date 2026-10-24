@@ -176,51 +176,98 @@ function withoutCommentsAndCode(markdown) {
 }
 
 function isCompleteHtmlTag(content) {
-  const tagStart = content.match(/^<(\/?)([A-Za-z][A-Za-z0-9-]*)/);
+  const closingTag = content.match(/^<\/([A-Za-z][A-Za-z0-9-]*)[ \t]*>[ \t]*$/);
+  if (closingTag) {
+    return true;
+  }
+
+  const tagStart = content.match(/^<([A-Za-z][A-Za-z0-9-]*)/);
   if (!tagStart) {
     return false;
   }
 
+  const tagName = tagStart[1].toLowerCase();
   let index = tagStart[0].length;
-  if (tagStart[1] === "/") {
-    return /^[ \t]*>[ \t]*$/.test(content.slice(index));
-  }
 
-  let quote = null;
-  for (; index < content.length; index += 1) {
-    const character = content[index];
+  while (index < content.length) {
+    const whitespaceStart = index;
+    while (content[index] === " " || content[index] === "\t") {
+      index += 1;
+    }
+    const hadWhitespace = index > whitespaceStart;
 
-    if (quote) {
-      if (character === quote) {
-        quote = null;
-      }
-      continue;
+    if (content[index] === ">") {
+      return /^[ \t]*$/.test(content.slice(index + 1));
     }
 
-    if (character === '"' || character === "'") {
-      quote = character;
-      continue;
+    if (content[index] === "/" && content[index + 1] === ">") {
+      return (
+        /^[ \t]*$/.test(content.slice(index + 2)) &&
+        !["pre", "script", "style", "textarea"].includes(tagName)
+      );
     }
 
-    if (character === "<") {
+    // Attribute names must be separated from the tag name / previous
+    // attribute by whitespace. This rejects malformed forms such as foo=>.
+    if (!hadWhitespace) {
       return false;
     }
 
-    if (character === ">") {
-      const tagName = tagStart[2].toLowerCase();
-      const isSelfClosingRawTextTag =
-        ["pre", "script", "style", "textarea"].includes(tagName) &&
-        content.slice(tagStart[0].length, index).trimEnd().endsWith("/");
-      if (isSelfClosingRawTextTag) {
+    const attributeName = content.slice(index).match(/^[A-Za-z_:][A-Za-z0-9_.:-]*/);
+    if (!attributeName) {
+      return false;
+    }
+    index += attributeName[0].length;
+
+    const afterName = index;
+    while (content[index] === " " || content[index] === "\t") {
+      index += 1;
+    }
+
+    if (content[index] !== "=") {
+      // Boolean attributes are valid; the next loop checks the following
+      // separator or the end of the tag.
+      if (index === afterName && content[index] !== ">" &&
+          !(content[index] === "/" && content[index + 1] === ">")) {
         return false;
       }
-      return /^[ \t]*$/.test(content.slice(index + 1));
+      continue;
+    }
+
+    index += 1;
+    while (content[index] === " " || content[index] === "\t") {
+      index += 1;
+    }
+
+    const quote = content[index];
+    if (quote === '"' || quote === "'") {
+      index += 1;
+      const valueEnd = content.indexOf(quote, index);
+      if (valueEnd < 0) {
+        return false;
+      }
+      index = valueEnd + 1;
+    } else {
+      const value = content.slice(index).match(/^[^ \t"'=<> \x60]+/);
+      if (!value) {
+        return false;
+      }
+      index += value[0].length;
+    }
+
+    if (
+      content[index] !== undefined &&
+      content[index] !== " " &&
+      content[index] !== "\t" &&
+      content[index] !== ">" &&
+      !(content[index] === "/" && content[index + 1] === ">")
+    ) {
+      return false;
     }
   }
 
   return false;
 }
-
 function withoutRawHtmlBlocks(markdown) {
   const lines = String(markdown || "").split(/\r?\n/);
   const visibleLines = [];

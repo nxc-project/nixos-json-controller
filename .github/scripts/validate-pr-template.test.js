@@ -760,3 +760,28 @@ test("meta tags inside an open paragraph do not start raw HTML block type 6", ()
     "受け入れ条件との対応",
   ]);
 });
+
+
+test("malformed HTML attributes do not start a raw HTML block", () => {
+  for (const tag of ["<custom-tag foo=>", "<custom-tag foo= >", "<custom-tag foo=\"unterminated>"]) {
+    const body = [
+      "## Why",
+      "Reason.",
+      "",
+      tag,
+      "## 変更内容",
+      "Changed.",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(template, body);
+
+    assert.equal(result.ok, true, tag);
+    assert.deepEqual(result.missingHeadings, [], tag);
+    assert.deepEqual(extractH2Headings(body), [
+      "Why",
+      "変更内容",
+      "受け入れ条件との対応",
+    ], tag);
+  }
+});
