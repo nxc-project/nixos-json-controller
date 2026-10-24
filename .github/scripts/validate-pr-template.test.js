@@ -843,3 +843,36 @@ test("inline code text in H2 headings is retained for required-section matching"
     ["Why", "受け入れ条件との対応"],
   );
 });
+
+
+test("inline code spans in the middle of H2 titles retain their text", () => {
+  const tick = String.fromCharCode(96);
+  const headingTemplate = [
+    "## Why",
+    "## 変更対象は nxc のみ",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+  const body = [
+    "## Why",
+    "Reason.",
+    "## 変更対象は " + tick + "nxc" + tick + " のみ",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(headingTemplate, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更対象は nxc のみ",
+    "受け入れ条件との対応",
+  ]);
+
+  // Inline-code text in ordinary prose must still be excluded from headings.
+  assert.deepEqual(
+    extractH2Headings("## Why\nExample: " + tick + "## 変更対象は nxc のみ" + tick + "\n## 受け入れ条件との対応"),
+    ["Why", "受け入れ条件との対応"],
+  );
+});

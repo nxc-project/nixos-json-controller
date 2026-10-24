@@ -17,8 +17,14 @@ function withoutInlineCodeAndHtmlComments(markdown) {
 
   function isAtxH2HeadingLine(index) {
     const lineStart = source.lastIndexOf("\n", index - 1) + 1;
-    const prefix = source.slice(lineStart, index);
-    return /^ {0,3}##[ \t]+/.test(prefix);
+    const lineBreak = source.indexOf("\n", index);
+    const lineEnd = lineBreak < 0 ? source.length : lineBreak;
+    const line = source.slice(lineStart, lineEnd).replace(/\r$/, "");
+    const headingStart = line.match(/^ {0,3}##[ \t]+/);
+
+    // Check the whole physical line, not just the prefix before this code
+    // span, so code spans anywhere in an ATX H2 title keep their text.
+    return Boolean(headingStart && index >= lineStart + headingStart[0].length);
   }
 
   function isEscapedBacktick(index) {
