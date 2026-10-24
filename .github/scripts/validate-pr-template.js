@@ -225,12 +225,13 @@ function isCompleteHtmlTag(content) {
     }
 
     if (content[index] !== "=") {
-      // Boolean attributes are valid; the next loop checks the following
-      // separator or the end of the tag.
+      // Boolean attributes are valid; return to the attribute boundary so
+      // the next loop can consume any separator before the next attribute.
       if (index === afterName && content[index] !== ">" &&
           !(content[index] === "/" && content[index + 1] === ">")) {
         return false;
       }
+      index = afterName;
       continue;
     }
 
