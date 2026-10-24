@@ -738,3 +738,25 @@ test("HTML comment markers inside quoted HTML attributes do not hide later headi
     ], tag);
   }
 });
+
+
+test("meta tags inside an open paragraph do not start raw HTML block type 6", () => {
+  const body = [
+    "## Why",
+    "Reason.",
+    "<meta>",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
