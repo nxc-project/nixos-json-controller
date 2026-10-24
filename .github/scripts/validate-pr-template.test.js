@@ -815,3 +815,31 @@ test("valid HTML attributes still start a raw HTML block", () => {
     ], tag);
   }
 });
+
+
+test("inline code text in H2 headings is retained for required-section matching", () => {
+  const tick = String.fromCharCode(96);
+  const body = [
+    "## Why",
+    "Reason.",
+    "## " + tick + "変更内容" + tick,
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+
+  // The same heading-looking text in an ordinary code span is still ignored.
+  assert.deepEqual(
+    extractH2Headings("## Why\nExample: " + tick + "## 変更内容" + tick + "\n## 受け入れ条件との対応"),
+    ["Why", "受け入れ条件との対応"],
+  );
+});

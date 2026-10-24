@@ -15,6 +15,12 @@ function withoutInlineCodeAndHtmlComments(markdown) {
     output.push(masked);
   }
 
+  function isAtxH2HeadingLine(index) {
+    const lineStart = source.lastIndexOf("\n", index - 1) + 1;
+    const prefix = source.slice(lineStart, index);
+    return /^ {0,3}##[ \t]+/.test(prefix);
+  }
+
   function isEscapedBacktick(index) {
     let backslashCount = 0;
     for (let cursor = index - 1; cursor >= 0 && source[cursor] === "\\"; cursor -= 1) {
@@ -140,7 +146,19 @@ function withoutInlineCodeAndHtmlComments(markdown) {
       }
 
       if (closingEnd >= 0) {
-        maskRange(index, closingEnd);
+        if (isAtxH2HeadingLine(index)) {
+          // Inline code is part of an ATX heading's title. Ignore its
+          // delimiters, but retain the code text so equivalent heading
+          // spellings match the template (e.g. ## `変更内容`).
+          const closingStart = closingEnd - delimiterLength;
+          maskRange(index, openingEnd);
+          output.push(source.slice(openingEnd, closingStart));
+          maskRange(closingStart, closingEnd);
+        } else {
+          // Elsewhere, code spans are masked to prevent heading-like content
+          // inside inline code from being counted as a real section.
+          maskRange(index, closingEnd);
+        }
         index = closingEnd;
       } else {
         // An unmatched backtick run is literal Markdown, not an inline code span.
