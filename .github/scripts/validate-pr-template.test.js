@@ -709,3 +709,32 @@ test("HTML comment markers in indented code blocks do not mask later headings", 
     "受け入れ条件との対応",
   ]);
 });
+
+
+test("HTML comment markers inside quoted HTML attributes do not hide later headings", () => {
+  for (const tag of [
+    'Example: <custom-tag data-example="<!--">.',
+    "Example: <custom-tag data-example='<!--'>.",
+  ]) {
+    const body = [
+      "## Why",
+      "Reason.",
+      "",
+      tag,
+      "",
+      "## 変更内容",
+      "Changed.",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(template, body);
+
+    assert.equal(result.ok, true, tag);
+    assert.deepEqual(result.missingHeadings, [], tag);
+    assert.deepEqual(extractH2Headings(body), [
+      "Why",
+      "変更内容",
+      "受け入れ条件との対応",
+    ], tag);
+  }
+});

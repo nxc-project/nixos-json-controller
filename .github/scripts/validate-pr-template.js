@@ -63,7 +63,46 @@ function withoutInlineCodeAndHtmlComments(markdown) {
     return source.length;
   }
 
+  function rawHtmlTagEnd(startIndex) {
+    const opening = source.slice(startIndex).match(/^<\/?[A-Za-z][A-Za-z0-9-]*(?=[\\s/>])/);
+    if (!opening) {
+      return -1;
+    }
+
+    let quote = null;
+    for (let cursor = startIndex + opening[0].length; cursor < source.length; cursor += 1) {
+      const character = source[cursor];
+
+      if (quote) {
+        if (character === quote) {
+          quote = null;
+        }
+        continue;
+      }
+
+      if (character === '"' || character === "'") {
+        quote = character;
+        continue;
+      }
+
+      if (character === ">") {
+        return cursor + 1;
+      }
+    }
+
+    return -1;
+  }
+
   for (let index = 0; index < source.length;) {
+    // Do not interpret comment-like text inside quoted HTML attributes as a
+    // real comment. Treat a complete tag as one unit before checking <!--.
+    const htmlTagEnd = source[index] === "<" ? rawHtmlTagEnd(index) : -1;
+    if (htmlTagEnd > index) {
+      output.push(source.slice(index, htmlTagEnd));
+      index = htmlTagEnd;
+      continue;
+    }
+
     if (source[index] === backtick) {
       let openingEnd = index;
       while (source[openingEnd] === backtick) {
