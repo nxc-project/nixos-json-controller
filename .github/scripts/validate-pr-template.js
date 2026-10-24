@@ -250,11 +250,11 @@ function withoutRawHtmlBlocks(markdown) {
       continue;
     }
 
-    // Indented code blocks cannot interrupt an open paragraph. Keep the
-    // existing paragraph state for indented nonblank lines; when no paragraph
-    // is open, the state remains closed and the line is treated as code.
+    // An indented line continues an already-open paragraph, but starts
+    // an indented code block when no paragraph is open. Mask code-block
+    // contents here so literal HTML comment markers are not parsed later.
     if (/^(?: {4,}|\t)/.test(line)) {
-      visibleLines.push(line);
+      visibleLines.push(paragraphOpen ? line : "");
       continue;
     }
 

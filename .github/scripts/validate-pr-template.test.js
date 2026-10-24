@@ -686,3 +686,26 @@ test("blank lines made of spaces or tabs close paragraphs before type 7 HTML blo
     assert.deepEqual(result.missingHeadings, ["変更内容"], JSON.stringify(blankLine));
   }
 });
+
+
+test("HTML comment markers in indented code blocks do not mask later headings", () => {
+  const body = [
+    "## Why",
+    "Reason.",
+    "",
+    "    <!-- literal token",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
