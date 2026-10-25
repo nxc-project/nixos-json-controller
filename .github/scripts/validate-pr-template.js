@@ -366,9 +366,22 @@ function withoutRawHtmlBlocks(markdown) {
     // incorrectly satisfy a required PR-template section.
     const listFenceOpening = line.match(new RegExp("^( {0,3})([-+*]|[0-9]{1,9}[.)])([ ]{1,4})(" + grave + "{3,}|~{3,})(.*)$"));
     if (listFenceOpening) {
+      const marker = listFenceOpening[2];
+      const markerIndent = listFenceOpening[1].length;
+      const orderedListMayInterruptParagraph = /^0{0,8}1[.)]$/.test(marker);
+      const continuesActiveList = activeList && markerIndent >= activeList.contentIndent;
+      // Match the paragraph-interruption rules used by startsListItem below.
+      // In an open paragraph, ordered markers other than 1 cannot start a new
+      // list (unless this is a continuation inside an existing list item).
+      const startsListItemHere =
+        !paragraphOpen ||
+        !/^[0-9]/.test(marker) ||
+        orderedListMayInterruptParagraph ||
+        continuesActiveList;
+
       const character = listFenceOpening[4][0];
       const info = listFenceOpening[5];
-      if (!(character === grave && info.includes(grave))) {
+      if (startsListItemHere && !(character === grave && info.includes(grave))) {
         activeFence = {
           character,
           length: listFenceOpening[4].length,
