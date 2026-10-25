@@ -316,7 +316,8 @@ function withoutRawHtmlBlocks(markdown) {
     "menu|menuitem|nav|noframes|ol|optgroup|option|p|param|search|section|" +
     "summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul";
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
     // Reset the list-terminating blank-line counter on every nonblank line,
     // including fence and raw-HTML lines that exit through an early continue.
     if (line.trim() !== "") {
@@ -491,9 +492,15 @@ function withoutRawHtmlBlocks(markdown) {
     // A valid reference definition is a block-level construct, not paragraph
     // text. Keep its paragraph state unchanged so a following type-7 HTML tag
     // starts a raw HTML block when Markdown permits it.
-    const referenceDefinition = parseReferenceLinkDefinition(line);
+    const referenceDefinition = parseReferenceLinkDefinition(lines, lineIndex);
     if (referenceDefinition && !paragraphOpen) {
+      // Link definitions are not rendered content. Mask continuation lines as
+      // well so a destination or multi-line title cannot masquerade as an H2.
       visibleLines.push(line);
+      for (let offset = 1; offset < referenceDefinition.lineCount; offset += 1) {
+        visibleLines.push("");
+      }
+      lineIndex += referenceDefinition.lineCount - 1;
       continue;
     }
 
@@ -610,10 +617,112 @@ function normalizeReferenceLinkLabel(label) {
   return unescaped.trim().replace(/[ \t\r\n]+/g, " ").toLowerCase();
 }
 
-function parseReferenceLinkDefinition(line) {
-  // Reference labels end at the first unescaped closing bracket. A bracket
-  // escaped with a backslash is part of the label, not the definition delimiter.
-  const content = String(line || "").replace(/^ {0,3}/, "");
+function parseReferenceTitleAt(lines, lineIndex, offset) {
+  const firstLine = String(lines[lineIndex] || "");
+  const opening = firstLine[offset];
+  if (opening !== '"' && opening !== "'" && opening !== "(") return null;
+
+  const closing = opening === "(" ? ")" : opening;
+  let depth = opening === "(" ? 1 : 0;
+  let currentLineIndex = lineIndex;
+  let cursor = offset + 1;
+
+  while (currentLineIndex < lines.length) {
+    const line = String(lines[currentLineIndex] || "");
+    while (cursor < line.length) {
+      const character = line[cursor];
+      if (character === "\\" && cursor + 1 < line.length) {
+        cursor += 2;
+        continue;
+      }
+
+      if (opening === "(" && character === "(") {
+        depth += 1;
+      } else if (character === closing) {
+        if (opening !== "(" || --depth === 0) {
+          if (line.slice(cursor + 1).trim() !== "") return null;
+          return { lineCount: currentLineIndex - lineIndex + 1 };
+        }
+      }
+      cursor += 1;
+    }
+
+    const nextLineIndex = currentLineIndex + 1;
+    if (nextLineIndex >= lines.length || String(lines[nextLineIndex] || "").trim() === "") {
+      return null;
+    }
+    currentLineIndex = nextLineIndex;
+    cursor = 0;
+  }
+
+  return null;
+}
+
+function parseReferenceDestinationAt(line, offset) {
+  const source = String(line || "");
+  if (offset >= source.length) return null;
+
+  if (source[offset] === "<") {
+    let cursor = offset + 1;
+    while (cursor < source.length) {
+      const character = source[cursor];
+      if (
+        character === "\\" &&
+        cursor + 1 < source.length &&
+        /^[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]$/.test(source[cursor + 1])
+      ) {
+        cursor += 2;
+        continue;
+      }
+      if (character === "<") return null;
+      if (character === ">") {
+        const destination = source.slice(offset, cursor + 1);
+        return isValidLinkDestinationToken(destination)
+          ? { destination, end: cursor + 1 }
+          : null;
+      }
+      if (character === "\r" || character === "\n") return null;
+      cursor += 1;
+    }
+    return null;
+  }
+
+  let cursor = offset;
+  let parentheses = 0;
+  while (cursor < source.length && !/[ \t\r\n]/.test(source[cursor]) && !/[\x00-\x08\x0B-\x1F\x7F]/.test(source[cursor])) {
+    const character = source[cursor];
+
+    if (character === "<" || character === ">") return null;
+
+    if (
+      character === "\\" &&
+      cursor + 1 < source.length &&
+      /^[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]$/.test(source[cursor + 1])
+    ) {
+      cursor += 2;
+      continue;
+    }
+
+    if (character === "(") parentheses += 1;
+    if (character === ")") {
+      parentheses -= 1;
+      if (parentheses < 0) return null;
+    }
+    cursor += 1;
+  }
+
+  if (cursor === offset || parentheses !== 0) return null;
+  const destination = source.slice(offset, cursor);
+  return isValidLinkDestinationToken(destination)
+    ? { destination, end: cursor }
+    : null;
+}
+
+function parseReferenceLinkDefinition(linesOrLine, startIndex = 0) {
+  const lines = Array.isArray(linesOrLine) ? linesOrLine : [String(linesOrLine || "")];
+  const line = String(lines[startIndex] || "");
+  // Reference labels end at the first unescaped closing bracket.
+  const content = line.replace(/^ {0,3}/, "");
   if (!content.startsWith("[")) return null;
 
   let closingBracket = -1;
@@ -633,14 +742,59 @@ function parseReferenceLinkDefinition(line) {
   const label = content.slice(1, closingBracket);
   if (!label.trim()) return null;
 
-  const destinationMatch = content.slice(closingBracket + 2).match(
-    /^[ \t]*(<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'|\([^) \n]*\)))?[ \t]*$/,
-  );
-  if (!destinationMatch || !isValidLinkDestinationToken(destinationMatch[1])) return null;
+  let destinationLineIndex = startIndex;
+  let tail = content.slice(closingBracket + 2);
+  let destinationLine = line;
+  let destinationOffset = (line.length - content.length) + closingBracket + 2;
 
-  return { label, destination: destinationMatch[1] };
+  if (/^[ \t]*$/.test(tail)) {
+    // CommonMark permits the destination to begin on the next physical line.
+    destinationLineIndex += 1;
+    if (destinationLineIndex >= lines.length || String(lines[destinationLineIndex] || "").trim() === "") {
+      return null;
+    }
+    destinationLine = String(lines[destinationLineIndex] || "");
+    const indentation = destinationLine.match(/^[ \t]*/)[0].length;
+    destinationOffset = indentation;
+    tail = destinationLine.slice(destinationOffset);
+  } else {
+    const whitespace = tail.match(/^[ \t]*/)[0].length;
+    destinationOffset += whitespace;
+    tail = tail.slice(whitespace);
+  }
+
+  const destinationMatch = parseReferenceDestinationAt(destinationLine, destinationOffset);
+  if (!destinationMatch) return null;
+
+  const remainder = destinationLine.slice(destinationMatch.end);
+  let consumedLines = destinationLineIndex - startIndex + 1;
+  const trailing = remainder.trim();
+
+  if (trailing !== "") {
+    // A title must be separated from its destination by whitespace.
+    if (!/^[ \t]+/.test(remainder)) return null;
+    const titleOffset = destinationMatch.end + remainder.match(/^[ \t]*/)[0].length;
+    const title = parseReferenceTitleAt(lines, destinationLineIndex, titleOffset);
+    if (!title) return null;
+    consumedLines = Math.max(consumedLines, destinationLineIndex - startIndex + title.lineCount);
+  } else {
+    // A title may start on the next line, and quoted / parenthesized titles
+    // may continue across several lines as long as they contain no blank line.
+    const nextTitleLineIndex = destinationLineIndex + 1;
+    if (nextTitleLineIndex < lines.length) {
+      const nextLine = String(lines[nextTitleLineIndex] || "");
+      const indentation = nextLine.match(/^[ \t]*/)[0].length;
+      if (/["'(]/.test(nextLine[indentation] || "")) {
+        const title = parseReferenceTitleAt(lines, nextTitleLineIndex, indentation);
+        if (title) {
+          consumedLines = Math.max(consumedLines, nextTitleLineIndex - startIndex + title.lineCount);
+        }
+      }
+    }
+  }
+
+  return { label, destination: destinationMatch.destination, lineCount: consumedLines };
 }
-
 function isValidLinkDestinationToken(destination) {
   const token = String(destination || "");
   if (token.startsWith("<") && token.endsWith(">")) {
@@ -665,9 +819,14 @@ function isValidLinkDestinationToken(destination) {
     const character = token[index];
     if (/\s/.test(character) || character === "<" || character === ">") return false;
     if (character === "\\") {
-      // Do not accept a dangling escape at the end of a bare destination.
-      if (index + 1 >= token.length) return false;
-      index += 1;
+      // A backslash before ASCII punctuation escapes that punctuation. Other
+      // backslashes, including one at the end of a bare destination, are literal.
+      if (
+        index + 1 < token.length &&
+        /^[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]$/.test(token[index + 1])
+      ) {
+        index += 1;
+      }
       continue;
     }
     if (character === "(") parentheses += 1;
@@ -768,20 +927,24 @@ function parseInlineLinkEnd(source, openingParen) {
 
 function extractReferenceLinkDefinitions(markdown) {
   const definitions = new Set();
+  const lines = String(markdown || "").split(/\r?\n/);
   let paragraphOpen = false;
-  for (const line of String(markdown || "").split(/\r?\n/)) {
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
     if (line.trim() === "") {
       paragraphOpen = false;
       continue;
     }
 
-    const definition = parseReferenceLinkDefinition(line);
+    const definition = parseReferenceLinkDefinition(lines, lineIndex);
     if (definition) {
       // A reference definition is a block-level construct and cannot interrupt
       // an open paragraph. Do not normalize shortcut links using a definition
       // that Markdown would render as literal paragraph text.
       if (!paragraphOpen) {
         definitions.add(normalizeReferenceLinkLabel(definition.label));
+        lineIndex += definition.lineCount - 1;
       }
       continue;
     }
@@ -808,7 +971,6 @@ function extractReferenceLinkDefinitions(markdown) {
 
   return definitions;
 }
-
 function stripInlineLinks(text, referenceDefinitions = new Set()) {
   const source = String(text || "");
   let output = "";
