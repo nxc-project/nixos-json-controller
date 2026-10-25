@@ -196,6 +196,7 @@ function withoutInlineCodeAndHtmlComments(markdown) {
   return output.join("");
 }
 
+// Semicolon-terminated named references from the WHATWG HTML character-reference table.
 const HTML_CHARACTER_REFERENCES = require("./html-character-references.json");
 
 const fs = require("node:fs");
@@ -827,15 +828,19 @@ function isValidLinkDestinationToken(destination) {
   if (token.startsWith("<") && token.endsWith(">")) {
     const inner = token.slice(1, -1);
     for (let index = 0; index < inner.length; index += 1) {
-      if (inner[index] === "\n" || inner[index] === "\r") return false;
-      if (inner[index] === "\\") {
-        // A backslash must escape an actual following character; a final
-        // backslash means the apparent closing angle bracket was escaped.
+      const character = inner[index];
+      const code = character.charCodeAt(0);
+      if (code <= 0x20 || code === 0x7f) return false;
+      if (character === "\\") {
+        // A backslash must not be used to smuggle whitespace/control
+        // characters into an angle-bracket destination.
         if (index + 1 >= inner.length) return false;
+        const nextCode = inner[index + 1].charCodeAt(0);
+        if (nextCode <= 0x20 || nextCode === 0x7f) return false;
         index += 1;
         continue;
       }
-      if (inner[index] === "<" || inner[index] === ">") return false;
+      if (character === "<" || character === ">") return false;
     }
     return true;
   }
