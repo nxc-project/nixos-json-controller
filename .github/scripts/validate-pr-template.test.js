@@ -1577,6 +1577,48 @@ test("reference definitions reject whitespace and control characters in angle de
 });
 
 
+test("numeric character references enforce CommonMark digit limits", () => {
+  const invalidReferences = [
+    "## Name &#87654321;",
+    "## Name &#x1234567;",
+  ];
+
+  for (const heading of invalidReferences) {
+    assert.deepEqual(extractH2Headings(heading), [
+      heading.slice("## ".length),
+    ]);
+
+    const result = validatePullRequestBody(
+      heading,
+      heading.replace(/&#(?:x[0-9a-fA-F]{7}|[0-9]{8});/, "\ufffd"),
+    );
+    assert.equal(result.ok, false, heading);
+    assert.deepEqual(result.missingHeadings, [heading.slice("## ".length)], heading);
+  }
+
+  assert.deepEqual(extractH2Headings("## Name &#169;"), ["Name \u00a9"]);
+  assert.deepEqual(extractH2Headings("## Name &#xA9;"), ["Name \u00a9"]);
+});
+
+test("reference link labels use Unicode full case folding", () => {
+  const body = [
+    "## [STRASSE]",
+    "## [ΟΣ]",
+    "## [İ]",
+    "",
+    "[Straße]: /street",
+    "[ος]: /greek",
+    "[i\u0307]: /dotted-i",
+  ].join("\n");
+
+  assert.deepEqual(extractH2Headings(body), [
+    "STRASSE",
+    "ΟΣ",
+    "İ",
+  ]);
+});
+
+
 test("reference definitions reject unbalanced bare destinations", () => {
   const body = [
     "## [Why]",
