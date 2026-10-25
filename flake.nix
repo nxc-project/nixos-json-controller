@@ -73,7 +73,7 @@
             src = ./frontend;
             inherit (finalAttrs) pnpm;
             fetcherVersion = 4;
-            hash = "";
+            hash = "sha256-94cQYRyDS137qMT/IxO+S2rZ8OqgN51rCatdJscBBjI=";
           };
           pnpmRoot = "frontend";
 
