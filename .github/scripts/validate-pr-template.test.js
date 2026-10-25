@@ -1357,32 +1357,107 @@ test("setext-like lines without a preceding paragraph do not interrupt definitio
 });
 
 
-test("reference definitions reject destinations with a dangling backslash", () => {
+test("bare reference destinations allow literal trailing backslashes but angle destinations reject escaped closers", () => {
   const trailingBackslash = String.fromCharCode(92);
-  const definitions = [
-    "[Why]: /broken" + trailingBackslash,
+  const bareBody = [
+    "## [Why]",
+    "[Why]: /path" + trailingBackslash,
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const bareResult = validatePullRequestBody(template, bareBody);
+
+  assert.equal(bareResult.ok, true);
+  assert.deepEqual(bareResult.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(bareBody), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+
+  const angleBody = [
+    "## [Why]",
     "[Why]: <broken" + trailingBackslash + ">",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const angleResult = validatePullRequestBody(template, angleBody);
+
+  assert.equal(angleResult.ok, false);
+  assert.deepEqual(angleResult.missingHeadings, ["Why"]);
+  assert.deepEqual(extractH2Headings(angleBody), [
+    "[Why]",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
+
+test("reference definitions accept titles with spaces and destinations on the next line", () => {
+  const headingTemplate = [
+    "## Why",
+    "## 変更内容",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+  const cases = [
+    {
+      name: "parenthesized title containing spaces",
+      definitionLines: ["[Why]: /why (a title with spaces)"],
+    },
+    {
+      name: "destination on the following line",
+      definitionLines: ["[Why]:", "/why"],
+    },
+    {
+      name: "multiline parenthesized title",
+      definitionLines: ["[Why]: /why", "(a title", "with spaces)"],
+    },
   ];
 
-  for (const definition of definitions) {
+  for (const item of cases) {
     const body = [
       "## [Why]",
-      definition,
+      ...item.definitionLines,
       "## 変更内容",
       "Changed.",
       "## 受け入れ条件との対応",
       "Done.",
     ].join("\n");
-    const result = validatePullRequestBody(template, body);
+    const result = validatePullRequestBody(headingTemplate, body);
 
-    assert.equal(result.ok, false, definition);
-    assert.deepEqual(result.missingHeadings, ["Why"], definition);
+    assert.equal(result.ok, true, item.name);
+    assert.deepEqual(result.missingHeadings, [], item.name);
     assert.deepEqual(extractH2Headings(body), [
-      "[Why]",
+      "Why",
       "変更内容",
       "受け入れ条件との対応",
-    ], definition);
+    ], item.name);
   }
+});
+
+test("multiline reference destinations keep following raw HTML headings hidden", () => {
+  const body = [
+    "## Why",
+    "[foo]:",
+    "/url",
+    "<custom-tag>",
+    "## 変更内容",
+    "This apparent heading is part of the raw HTML block.",
+    "",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["変更内容"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "受け入れ条件との対応",
+  ]);
 });
 
 test("setext-like lines without a preceding paragraph do not hide later inline HTML headings", () => {
