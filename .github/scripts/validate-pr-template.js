@@ -198,6 +198,7 @@ function withoutInlineCodeAndHtmlComments(markdown) {
 
 // Semicolon-terminated named references from the WHATWG HTML character-reference table.
 const HTML_CHARACTER_REFERENCES = require("./html-character-references.json");
+const UNICODE_CASE_FOLDING = require("./unicode-case-folding.json");
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -622,6 +623,14 @@ function withoutRawHtmlBlocks(markdown) {
 
   return visibleLines.join("\n");
 }
+function unicodeCaseFold(text) {
+  let output = "";
+  for (const character of String(text || "")) {
+    output += UNICODE_CASE_FOLDING[character] || character;
+  }
+  return output;
+}
+
 function normalizeReferenceLinkLabel(label) {
   const source = String(label || "");
   let unescaped = "";
@@ -637,7 +646,7 @@ function normalizeReferenceLinkLabel(label) {
       unescaped += source[index];
     }
   }
-  return unescaped.trim().replace(/[ \t\r\n]+/g, " ").toLowerCase();
+  return unicodeCaseFold(unescaped.trim().replace(/[ \t\r\n]+/g, " "));
 }
 
 function parseReferenceTitleAt(lines, lineIndex, offset) {
@@ -1301,7 +1310,7 @@ function decodeMarkdownEscapesAndEntities(text) {
     }
 
     if (character === "&") {
-      const match = source.slice(index).match(/^&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|[A-Za-z][A-Za-z0-9]*);/);
+      const match = source.slice(index).match(/^&(#(?:[xX][0-9a-fA-F]{1,6}|[0-9]{1,7})|[A-Za-z][A-Za-z0-9]*);/);
       if (match) {
         const reference = match[1];
         let decoded;
