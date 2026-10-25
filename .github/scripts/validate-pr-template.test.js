@@ -1463,6 +1463,83 @@ test("inline link destinations reject escaped whitespace but preserve escaped pu
   ]);
 });
 
+test("angle-bracket link destinations reject whitespace and control characters", () => {
+  const invalidDestinations = [
+    "<not a link>",
+    "<not\ta-link>",
+    "<bad" + String.fromCharCode(1) + "destination>",
+    "<bad" + String.fromCharCode(127) + "destination>",
+    "<not\\ a-link>",
+  ];
+
+  for (const destination of invalidDestinations) {
+    const body = [
+      "## [Why](" + destination + ")",
+      "Reason.",
+      "## 変更内容",
+      "Changed.",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(template, body);
+
+    assert.equal(result.ok, false, JSON.stringify(destination));
+    assert.deepEqual(result.missingHeadings, ["Why"], JSON.stringify(destination));
+    assert.equal(
+      extractH2Headings(body)[0],
+      "[Why](" + destination + ")",
+      JSON.stringify(destination),
+    );
+  }
+
+  const validBody = [
+    "## [Why](<https://example.com/a-path>)",
+    "Reason.",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const validResult = validatePullRequestBody(template, validBody);
+
+  assert.equal(validResult.ok, true);
+  assert.deepEqual(validResult.missingHeadings, []);
+});
+
+test("heading normalization decodes Markdown escapes and character references outside code spans", () => {
+  const tick = String.fromCharCode(96);
+  const cases = [
+    { source: "## A \\& B", expected: "A & B" },
+    { source: "## A &amp; B", expected: "A & B" },
+    { source: "## A &#38; B", expected: "A & B" },
+    { source: "## A &#x26; B", expected: "A & B" },
+    { source: "## A &lt; B", expected: "A < B" },
+    { source: "## 2026 &mdash; NXC", expected: "2026 \u2014 NXC" },
+  ];
+
+  for (const item of cases) {
+    assert.deepEqual(
+      extractH2Headings(item.source),
+      [item.expected],
+      item.source,
+    );
+  }
+
+  // An escaped ampersand and code-span contents must stay literal.
+  assert.deepEqual(extractH2Headings("## A \\&amp;"), ["A &amp;"]);
+  assert.deepEqual(extractH2Headings("## " + tick + "&amp;" + tick), ["&amp;"]);
+
+  for (const item of cases.slice(0, 4)) {
+    const result = validatePullRequestBody(
+      "## A & B",
+      item.source,
+    );
+    assert.equal(result.ok, true, item.source);
+    assert.deepEqual(result.missingHeadings, [], item.source);
+  }
+});
+
+
 test("reference definitions reject unbalanced bare destinations", () => {
   const body = [
     "## [Why]",
