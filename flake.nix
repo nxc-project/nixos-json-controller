@@ -96,14 +96,57 @@
             webkitgtk_4_1
           ];
 
+          # Desktop integration must work from a profile, without the dev shell.
+          # wrapGAppsHook4 uses this at fixup time to preserve user XDG_DATA_DIRS
+          # while adding the schema paths and default /usr/share fallbacks.
+          GSETTINGS_SCHEMAS_PATH = gsettingsSchemasPath;
+
           # Cargo names the executable after the Rust package ("app"); expose
-          # the stable package command name independently from that crate name.
+          # a stable command name and an explicit desktop entry with a static icon.
           postInstall = ''
             mv "$out/bin/app" "$out/bin/nxc-app"
-            find "$out/share/applications" -type f -name '*.desktop' \
-              -exec sed -i 's/^Exec=app$/Exec=nxc-app/' {} +
+
+            mkdir -p "$out/share/applications"
+            rm -f "$out/share/applications/"*.desktop
+            cat > "$out/share/applications/nxc-app.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=nxc App Store
+Comment=Browse and manage NixOS packages
+Exec=nxc-app
+Icon=nxc-app
+Terminal=false
+Categories=System;Utility;
+EOF
+
+            install -Dm644 ${./frontend/src-tauri/icons/32x32.png} \
+              "$out/share/icons/hicolor/32x32/apps/nxc-app.png"
+            install -Dm644 ${./frontend/src-tauri/icons/128x128.png} \
+              "$out/share/icons/hicolor/128x128/apps/nxc-app.png"
+            install -Dm644 ${./frontend/src-tauri/icons/128x128@2x.png} \
+              "$out/share/icons/hicolor/256x256/apps/nxc-app.png"
+
             wrapProgram "$out/bin/nxc-app" \
-              --set NXC_APPSTREAM_DATA ${appstreamData}
+              --set NXC_APPSTREAM_DATA ${appstreamData} \
+              --prefix GSETTINGS_SCHEMAS_PATH : ${gsettingsSchemasPath}
+
+            # Fail the build if the app launcher contract or its static assets
+            # drift away from the command and icon names used by the package.
+            for field in \
+              "Type=Application" \
+              "Name=nxc App Store" \
+              "Exec=nxc-app" \
+              "Icon=nxc-app" \
+              "Terminal=false" \
+              "Categories=System;Utility;"; do
+              grep -Fxq "$field" "$out/share/applications/nxc-app.desktop"
+            done
+            test -x "$out/bin/nxc-app"
+            test -s "$out/share/icons/hicolor/32x32/apps/nxc-app.png"
+            test -s "$out/share/icons/hicolor/128x128/apps/nxc-app.png"
+            test -s "$out/share/icons/hicolor/256x256/apps/nxc-app.png"
+            grep -Fq "${appstreamData}" "$out/bin/nxc-app"
+            grep -Fq "${gsettingsSchemasPath}" "$out/bin/nxc-app"
           '';
 
           doCheck = false;
