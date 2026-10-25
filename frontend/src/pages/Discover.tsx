@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
   BookOpen,
@@ -53,6 +47,7 @@ import {
   formatUnresolvedRecommendationMessage,
 } from "@/catalog/recommendation-fallback";
 import { useAppState } from "@/lib/app-state";
+import { useDiscoverPackageState } from "./use-discover-package-state";
 import {
   advanceEmptyPageAutoLoadState,
   classifySearchUrlTransition,
@@ -164,36 +159,28 @@ function Discover() {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const { states, loading, error, refreshPackages } = useAppState();
   const isDiscoverActive = location.pathname === "/discover";
-  const isDiscoverActiveRef = useRef(isDiscoverActive);
-  useLayoutEffect(() => {
-    isDiscoverActiveRef.current = isDiscoverActive;
-  }, [isDiscoverActive]);
   const searchRequestIdRef = useRef(0);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   const loadingMoreRef = useRef(false);
   const loadingMoreRequestIdRef = useRef<number | null>(null);
   const consecutiveEmptyPagesRef = useRef(0);
   const resultIdsRef = useRef(new Set<string>());
-  const requestedStateIdsRef = useRef(new Set<string>());
   const attemptedRecommendationStateIdsRef = useRef(new Set<string>());
   const recommendationStateRequestsInFlightRef = useRef(new Set<string>());
-  const pendingStateIdsRef = useRef(new Set<string>());
-  const stateRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const stateRefreshInFlightRef = useRef(false);
   const pendingUrlQueryRef = useRef<string | null>(null);
   const lastHandledLocationKeyRef = useRef<string | null>(null);
   const lastKnownPathnameRef = useRef(location.pathname);
+  const { resetQueuedPackageStates, requestVisiblePackageStates } =
+    useDiscoverPackageState({
+      active: isDiscoverActive,
+      states,
+      refreshPackages,
+    });
 
-  const resetQueuedPackageStates = useCallback(() => {
-    requestedStateIdsRef.current.clear();
-    pendingStateIdsRef.current.clear();
-    if (stateRefreshTimerRef.current !== null) {
-      clearTimeout(stateRefreshTimerRef.current);
-      stateRefreshTimerRef.current = null;
-    }
-  }, []);
+  useEffect(() => {
+    if (isDiscoverActive) return;
+    attemptedRecommendationStateIdsRef.current.clear();
+  }, [isDiscoverActive]);
 
   const runSearch = useCallback(
     (searchQuery: string) => {
@@ -260,88 +247,6 @@ function Discover() {
     [resetQueuedPackageStates],
   );
 
-  // Status checks run only for rendered/near-visible cards. Briefly batch rows
-  // entering the virtual window so scrolling does not launch one Nix evaluation
-  // per card.
-  /** Dispatch queued package status checks one batch at a time. */
-  const dispatchQueuedPackageStates = useCallback(() => {
-    const scheduleNextBatch = () => {
-      if (
-        !isDiscoverActiveRef.current ||
-        pendingStateIdsRef.current.size === 0 ||
-        stateRefreshTimerRef.current !== null ||
-        stateRefreshInFlightRef.current
-      ) {
-        return;
-      }
-
-      stateRefreshTimerRef.current = setTimeout(() => {
-        stateRefreshTimerRef.current = null;
-        if (!isDiscoverActiveRef.current) return;
-        const batch = Array.from(pendingStateIdsRef.current).slice(0, 40);
-        for (const packageName of batch) {
-          pendingStateIdsRef.current.delete(packageName);
-        }
-        stateRefreshInFlightRef.current = true;
-        void refreshPackages(batch).finally(() => {
-          for (const packageName of batch) {
-            // Preserve the marker when a newer viewport has already queued the same ID.
-            if (!pendingStateIdsRef.current.has(packageName)) {
-              requestedStateIdsRef.current.delete(packageName);
-            }
-          }
-          stateRefreshInFlightRef.current = false;
-          scheduleNextBatch();
-        });
-      }, 120);
-    };
-
-    scheduleNextBatch();
-  }, [refreshPackages]);
-
-  /** Queue state checks for packages in the current virtual viewport. */
-  const requestVisiblePackageStates = useCallback(
-    (packageNames: string[]) => {
-      if (!isDiscoverActiveRef.current) return;
-      for (const packageName of packageNames) {
-        if (
-          states[packageName] !== undefined ||
-          requestedStateIdsRef.current.has(packageName)
-        ) {
-          continue;
-        }
-        requestedStateIdsRef.current.add(packageName);
-        pendingStateIdsRef.current.add(packageName);
-      }
-      dispatchQueuedPackageStates();
-    },
-    [dispatchQueuedPackageStates, states],
-  );
-
-  useEffect(() => {
-    if (isDiscoverActive) return;
-
-    // Drop queued visibility checks when the page is hidden. An already-running
-    // native request cannot be cancelled here, but it will not schedule another batch.
-    pendingStateIdsRef.current.clear();
-    requestedStateIdsRef.current.clear();
-    attemptedRecommendationStateIdsRef.current.clear();
-    if (stateRefreshTimerRef.current !== null) {
-      clearTimeout(stateRefreshTimerRef.current);
-      stateRefreshTimerRef.current = null;
-    }
-  }, [isDiscoverActive]);
-
-  useEffect(
-    () => () => {
-      if (stateRefreshTimerRef.current !== null) {
-        clearTimeout(stateRefreshTimerRef.current);
-        stateRefreshTimerRef.current = null;
-      }
-      pendingStateIdsRef.current.clear();
-    },
-    [],
-  );
 
   const loadMoreResults = useCallback(
     (retry = false) => {
