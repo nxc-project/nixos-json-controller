@@ -1296,7 +1296,7 @@ function decodeMarkdownEscapesAndEntities(text) {
     }
 
     if (character === "&") {
-      const match = source.slice(index).match(/^&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|[A-Za-z][A-Za-z0-9]+);/);
+      const match = source.slice(index).match(/^&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|[A-Za-z][A-Za-z0-9]*);/);
       if (match) {
         const reference = match[1];
         let decoded;
