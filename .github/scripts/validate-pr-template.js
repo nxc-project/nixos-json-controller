@@ -585,11 +585,131 @@ function normalizeReferenceLinkLabel(label) {
   return String(label || "").trim().replace(/[ \t\r\n]+/g, " ").toLowerCase();
 }
 
+function isValidLinkDestinationToken(destination) {
+  const token = String(destination || "");
+  if (token.startsWith("<") && token.endsWith(">")) {
+    const inner = token.slice(1, -1);
+    for (let index = 0; index < inner.length; index += 1) {
+      if (inner[index] === "\n" || inner[index] === "\r") return false;
+      if (inner[index] === "\\") {
+        index += 1;
+        continue;
+      }
+      if (inner[index] === "<" || inner[index] === ">") return false;
+    }
+    return true;
+  }
+
+  if (!token) return false;
+  let parentheses = 0;
+  for (let index = 0; index < token.length; index += 1) {
+    const character = token[index];
+    if (/\s/.test(character) || character === "<" || character === ">") return false;
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (character === "(") parentheses += 1;
+    if (character === ")") {
+      parentheses -= 1;
+      if (parentheses < 0) return false;
+    }
+  }
+  return parentheses === 0;
+}
+
+function parseInlineLinkEnd(source, openingParen) {
+  if (source[openingParen] !== "(") return -1;
+  let cursor = openingParen + 1;
+  const skipWhitespace = () => {
+    while (source[cursor] === " " || source[cursor] === "\t") cursor += 1;
+  };
+  skipWhitespace();
+
+  if (source[cursor] === ")") return cursor;
+
+  if (source[cursor] === "<") {
+    cursor += 1;
+    let closed = false;
+    while (cursor < source.length) {
+      const character = source[cursor];
+      if (character === "\n" || character === "\r") return -1;
+      if (character === "\\") {
+        cursor += 2;
+        continue;
+      }
+      if (character === "<") return -1;
+      if (character === ">") {
+        cursor += 1;
+        closed = true;
+        break;
+      }
+      cursor += 1;
+    }
+    if (!closed) return -1;
+  } else {
+    let depth = 0;
+    const destinationStart = cursor;
+    while (cursor < source.length) {
+      const character = source[cursor];
+      if (character === "\\") {
+        cursor += 2;
+        continue;
+      }
+      if (character === " " || character === "\t" || character === "\n" || character === "\r") {
+        if (depth > 0) return -1;
+        break;
+      }
+      if (character === "<" || character === ">") return -1;
+      if (character === "(") depth += 1;
+      if (character === ")") {
+        if (depth === 0) break;
+        depth -= 1;
+      }
+      cursor += 1;
+    }
+    if (depth !== 0) return -1;
+    if (cursor === destinationStart && source[cursor] !== ")") return -1;
+  }
+
+  const beforeWhitespace = cursor;
+  skipWhitespace();
+  if (source[cursor] === ")") return cursor;
+  if (cursor === beforeWhitespace) return -1;
+
+  const titleOpen = source[cursor];
+  if (titleOpen !== '"' && titleOpen !== "'" && titleOpen !== "(") return -1;
+  const titleClose = titleOpen === "(" ? ")" : titleOpen;
+  let titleDepth = titleOpen === "(" ? 1 : 0;
+  cursor += 1;
+  let titleClosed = false;
+  while (cursor < source.length) {
+    const character = source[cursor];
+    if (character === "\\") {
+      cursor += 2;
+      continue;
+    }
+    if ((character === "\n" || character === "\r") && titleOpen !== "(") return -1;
+    if (titleOpen === "(" && character === "(") titleDepth += 1;
+    if (character === titleClose) {
+      if (titleOpen !== "(" || --titleDepth === 0) {
+        cursor += 1;
+        titleClosed = true;
+        break;
+      }
+    }
+    cursor += 1;
+  }
+  if (!titleClosed) return -1;
+  skipWhitespace();
+  return source[cursor] === ")" ? cursor : -1;
+}
+
 function extractReferenceLinkDefinitions(markdown) {
   const definitions = new Set();
   let paragraphOpen = false;
   const definitionPattern =
-    /^ {0,3}\[([^\]]+)\]:[ \t]*(?:<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"]*"|'[^']*'|\([^)]*\)))?[ \t]*$/;
+    /^ {0,3}\[([^\]]+)\]:[ \t]*(<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'|\([^)\n]*\)))?[ \t]*$/;
 
   for (const line of String(markdown || "").split(/\r?\n/)) {
     if (line.trim() === "") {
@@ -598,7 +718,7 @@ function extractReferenceLinkDefinitions(markdown) {
     }
 
     const definition = line.match(definitionPattern);
-    if (definition) {
+    if (definition && isValidLinkDestinationToken(definition[2])) {
       // A reference definition is a block-level construct and cannot interrupt
       // an open paragraph. Do not normalize shortcut links using a definition
       // that Markdown would render as literal paragraph text.
@@ -609,10 +729,14 @@ function extractReferenceLinkDefinitions(markdown) {
     }
 
     const isAtxHeading = /^ {0,3}#{1,6}(?:[ \t]+|$)/.test(line);
-    const isFence = new RegExp("^ {0,3}(?:" + String.fromCharCode(96) + "{3,}|~{3,})").test(line);
+    const fenceOpening = line.match(new RegExp("^ {0,3}(" + String.fromCharCode(96) + "{3,}|~{3,})(.*)$"));
+    const isFence = Boolean(
+      fenceOpening &&
+      !(fenceOpening[1][0] === String.fromCharCode(96) && fenceOpening[2].includes(String.fromCharCode(96)))
+    );
     const isThematicBreak = /^ {0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})[ \t]*$/.test(line);
     const isListOrQuote = /^ {0,3}(?:>|[-+*][ \t]+|1[.)][ \t]+)/.test(line);
-    const isSetextUnderline = /^ {0,3}(?:=+|-{1,})[ \t]*$/.test(line);
+    const isSetextUnderline = paragraphOpen && /^ {0,3}(?:=+|-{1,})[ \t]*$/.test(line);
 
     if (isAtxHeading || isFence || isThematicBreak || isListOrQuote || isSetextUnderline) {
       paragraphOpen = false;
@@ -699,19 +823,10 @@ function stripInlineLinks(text, referenceDefinitions = new Set()) {
       continue;
     }
 
-    depth = 1;
-    let linkEnd = labelEnd + 2;
-    while (linkEnd < source.length && depth > 0) {
-      if (source[linkEnd] === "\\") {
-        linkEnd += 2;
-        continue;
-      }
-      if (source[linkEnd] === "(") depth += 1;
-      if (source[linkEnd] === ")") depth -= 1;
-      if (depth > 0) linkEnd += 1;
-    }
+    const linkEnd = parseInlineLinkEnd(source, labelEnd + 1);
 
-    if (depth !== 0) {
+    if (linkEnd < 0) {
+      // Invalid destinations or titles are literal Markdown, not links.
       output += source.slice(cursor, labelEnd + 1);
       cursor = labelEnd + 1;
       continue;

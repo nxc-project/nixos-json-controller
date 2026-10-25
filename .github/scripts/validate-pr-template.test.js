@@ -1270,3 +1270,88 @@ test("four-space setext-like lines do not interrupt paragraphs before reference 
     "受け入れ条件との対応",
   ]);
 });
+
+
+test("invalid inline link destinations remain literal in H2 headings", () => {
+  const body = [
+    "## [Why](not a link)",
+    "Reason.",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["Why"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "[Why](not a link)",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
+
+test("reference definitions reject unbalanced bare destinations", () => {
+  const body = [
+    "## [Why]",
+    "[Why]: (broken",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["Why"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "[Why]",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
+
+test("invalid backtick-fence info strings do not interrupt an open paragraph", () => {
+  const tick = String.fromCharCode(96);
+  const body = [
+    "## [Why]",
+    "Reason text",
+    tick.repeat(3) + "bad" + tick + "info",
+    "[Why]: /url",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["Why"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "[Why]",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
+
+test("setext-like lines without a preceding paragraph do not interrupt definitions", () => {
+  const body = [
+    "## [Why]",
+    "===",
+    "[Why]: /url",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["Why"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "[Why]",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
