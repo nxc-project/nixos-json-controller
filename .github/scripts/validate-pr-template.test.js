@@ -1545,6 +1545,38 @@ test("heading normalization decodes Markdown escapes and character references ou
 });
 
 
+test("reference definitions reject whitespace and control characters in angle destinations", () => {
+  const invalidDestinations = [
+    "<not a link>",
+    "<not\ta-link>",
+    "<bad" + String.fromCharCode(1) + "destination>",
+    "<bad" + String.fromCharCode(127) + "destination>",
+    "<not\\ a-link>",
+  ];
+  const headingTemplate = [
+    "## Why",
+    "## 変更内容",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+
+  for (const destination of invalidDestinations) {
+    const body = [
+      "## [Why]",
+      "[Why]: " + destination,
+      "## 変更内容",
+      "Changed.",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(headingTemplate, body);
+
+    assert.equal(result.ok, false, JSON.stringify(destination));
+    assert.deepEqual(result.missingHeadings, ["Why"], JSON.stringify(destination));
+    assert.equal(extractH2Headings(body)[0], "[Why]", JSON.stringify(destination));
+  }
+});
+
+
 test("reference definitions reject unbalanced bare destinations", () => {
   const body = [
     "## [Why]",
