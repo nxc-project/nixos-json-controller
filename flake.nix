@@ -81,7 +81,7 @@
             cargo-tauri.hook
             nodejs
             pkg-config
-            pnpm
+            finalAttrs.pnpm
             pnpmConfigHook
             makeWrapper
             wrapGAppsHook4
