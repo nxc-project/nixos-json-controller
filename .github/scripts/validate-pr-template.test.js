@@ -1414,7 +1414,7 @@ test("inline link destinations reject escaped whitespace but preserve escaped pu
     assert.equal(result.ok, false, JSON.stringify(destination));
     assert.deepEqual(result.missingHeadings, ["Why"], JSON.stringify(destination));
     assert.deepEqual(extractH2Headings(body), [
-      "[Why](" + destination + ")",
+      "[Why](" + destination.replace(/[\\t\\r\\n\\f]+/g, " ") + ")",
       "変更内容",
       "受け入れ条件との対応",
     ], JSON.stringify(destination));

@@ -1184,7 +1184,7 @@ function inlineAutolinkAt(source, startIndex) {
 
   const email = rest.match(/^<([A-Za-z0-9.!#$%&'*+\/=?^_\`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*)>/);
   if (email) {
-    return { end: startIndex + email[0].length, text: email[2] };
+    return { end: startIndex + email[0].length, text: email[1] };
   }
 
   return null;
