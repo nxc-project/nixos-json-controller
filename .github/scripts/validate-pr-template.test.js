@@ -1426,3 +1426,47 @@ test("valid reference definitions do not open a paragraph before a type-7 HTML b
     "受け入れ条件との対応",
   ]);
 });
+
+test("escaped closing brackets in reference definitions do not expose fake HTML headings", () => {
+  const body = [
+    "## Why",
+    "[Why\\]]: /url",
+    "<custom-tag>",
+    "## 変更内容",
+    "This apparent heading is part of the raw HTML block.",
+    "",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["変更内容"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "受け入れ条件との対応",
+  ]);
+});
+
+test("zero-padded ordered-list markers close paragraph state before reference definitions", () => {
+  for (const marker of ["01. ordered item", "001) ordered item"]) {
+    const body = [
+      "## [Why]",
+      marker,
+      "[Why]: /url",
+      "## 変更内容",
+      "Changed.",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(template, body);
+
+    assert.equal(result.ok, true, marker);
+    assert.deepEqual(result.missingHeadings, [], marker);
+    assert.deepEqual(extractH2Headings(body), [
+      "Why",
+      "変更内容",
+      "受け入れ条件との対応",
+    ], marker);
+  }
+});

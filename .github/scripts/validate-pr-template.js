@@ -491,14 +491,8 @@ function withoutRawHtmlBlocks(markdown) {
     // A valid reference definition is a block-level construct, not paragraph
     // text. Keep its paragraph state unchanged so a following type-7 HTML tag
     // starts a raw HTML block when Markdown permits it.
-    const referenceDefinition = content.match(
-      /^\[([^\]]+)\]:[ \t]*(<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'|\([^) \n]*\)))?[ \t]*$/,
-    );
-    if (
-      referenceDefinition &&
-      isValidLinkDestinationToken(referenceDefinition[2]) &&
-      !paragraphOpen
-    ) {
+    const referenceDefinition = parseReferenceLinkDefinition(line);
+    if (referenceDefinition && !paragraphOpen) {
       visibleLines.push(line);
       continue;
     }
@@ -599,7 +593,52 @@ function withoutRawHtmlBlocks(markdown) {
   return visibleLines.join("\n");
 }
 function normalizeReferenceLinkLabel(label) {
-  return String(label || "").trim().replace(/[ \t\r\n]+/g, " ").toLowerCase();
+  const source = String(label || "");
+  let unescaped = "";
+  for (let index = 0; index < source.length; index += 1) {
+    if (
+      source[index] === "\\" &&
+      index + 1 < source.length &&
+      /^[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]$/.test(source[index + 1])
+    ) {
+      unescaped += source[index + 1];
+      index += 1;
+    } else {
+      unescaped += source[index];
+    }
+  }
+  return unescaped.trim().replace(/[ \t\r\n]+/g, " ").toLowerCase();
+}
+
+function parseReferenceLinkDefinition(line) {
+  // Reference labels end at the first unescaped closing bracket. A bracket
+  // escaped with a backslash is part of the label, not the definition delimiter.
+  const content = String(line || "").replace(/^ {0,3}/, "");
+  if (!content.startsWith("[")) return null;
+
+  let closingBracket = -1;
+  for (let index = 1; index < content.length; index += 1) {
+    if (content[index] === "\\") {
+      index += 1;
+      continue;
+    }
+    if (content[index] === "[") return null;
+    if (content[index] === "]") {
+      closingBracket = index;
+      break;
+    }
+  }
+
+  if (closingBracket <= 1 || content[closingBracket + 1] !== ":") return null;
+  const label = content.slice(1, closingBracket);
+  if (!label.trim()) return null;
+
+  const destinationMatch = content.slice(closingBracket + 2).match(
+    /^[ \t]*(<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'|\([^) \n]*\)))?[ \t]*$/,
+  );
+  if (!destinationMatch || !isValidLinkDestinationToken(destinationMatch[1])) return null;
+
+  return { label, destination: destinationMatch[1] };
 }
 
 function isValidLinkDestinationToken(destination) {
@@ -730,22 +769,19 @@ function parseInlineLinkEnd(source, openingParen) {
 function extractReferenceLinkDefinitions(markdown) {
   const definitions = new Set();
   let paragraphOpen = false;
-  const definitionPattern =
-    /^ {0,3}\[([^\]]+)\]:[ \t]*(<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'|\([^)\n]*\)))?[ \t]*$/;
-
   for (const line of String(markdown || "").split(/\r?\n/)) {
     if (line.trim() === "") {
       paragraphOpen = false;
       continue;
     }
 
-    const definition = line.match(definitionPattern);
-    if (definition && isValidLinkDestinationToken(definition[2])) {
+    const definition = parseReferenceLinkDefinition(line);
+    if (definition) {
       // A reference definition is a block-level construct and cannot interrupt
       // an open paragraph. Do not normalize shortcut links using a definition
       // that Markdown would render as literal paragraph text.
       if (!paragraphOpen) {
-        definitions.add(normalizeReferenceLinkLabel(definition[1]));
+        definitions.add(normalizeReferenceLinkLabel(definition.label));
       }
       continue;
     }
@@ -757,7 +793,7 @@ function extractReferenceLinkDefinitions(markdown) {
       !(fenceOpening[1][0] === String.fromCharCode(96) && fenceOpening[2].includes(String.fromCharCode(96)))
     );
     const isThematicBreak = /^ {0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})[ \t]*$/.test(line);
-    const isListOrQuote = /^ {0,3}(?:>|[-+*][ \t]+|1[.)][ \t]+)/.test(line);
+    const isListOrQuote = /^ {0,3}(?:>|[-+*][ \t]+|0{0,8}1[.)][ \t]+)/.test(line);
     const isSetextUnderline = paragraphOpen && /^ {0,3}(?:=+|-{1,})[ \t]*$/.test(line);
 
     if (isAtxHeading || isFence || isThematicBreak || isListOrQuote || isSetextUnderline) {
