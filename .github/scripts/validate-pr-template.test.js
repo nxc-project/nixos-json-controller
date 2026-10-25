@@ -1127,3 +1127,74 @@ test("bracketed heading text without reference definitions remains literal", () 
     ["[Why]", "[Why][missing]", "[Literal] title"],
   );
 });
+
+
+test("blank lines separated by a list-contained fenced code block do not end the list", () => {
+  const fence = String.fromCharCode(96).repeat(3);
+  const body = [
+    "## Why",
+    "Reason.",
+    "- list item",
+    "",
+    "  " + fence + "md",
+    "  example",
+    "  " + fence,
+    "",
+    "  ## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\\n");
+
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["変更内容"]);
+  assert.deepEqual(extractH2Headings(body), ["Why", "受け入れ条件との対応"]);
+});
+
+test("reference-looking text inside an open paragraph is not a link definition", () => {
+  const body = [
+    "## [Why]",
+    "Reason text",
+    "[Why]: /url",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\\n");
+
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["Why"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "[Why]",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+
+  // A real definition may follow a completed heading block directly.
+  assert.deepEqual(extractH2Headings("## [Why]\\n[Why]: /why"), ["Why"]);
+});
+
+test("inline HTML tags in H2 titles normalize to rendered heading text", () => {
+  const body = [
+    "## <strong>Why</strong>",
+    "Reason.",
+    "## <em>変更内容</em>",
+    "Changed.",
+    "## <span data-label='acceptance'>受け入れ条件との対応</span>",
+    "Done.",
+  ].join("\\n");
+
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});

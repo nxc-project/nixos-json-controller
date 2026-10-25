@@ -317,6 +317,12 @@ function withoutRawHtmlBlocks(markdown) {
     "summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul";
 
   for (const line of lines) {
+    // Reset the list-terminating blank-line counter on every nonblank line,
+    // including fence and raw-HTML lines that exit through an early continue.
+    if (line.trim() !== "") {
+      consecutiveBlankLines = 0;
+    }
+
     if (activeBlock) {
       const closes = activeBlock.endPattern && activeBlock.endPattern.test(line);
       const endsAtBlank = activeBlock.untilBlank && line.trim() === "";
@@ -581,14 +587,43 @@ function normalizeReferenceLinkLabel(label) {
 
 function extractReferenceLinkDefinitions(markdown) {
   const definitions = new Set();
-  for (const line of String(markdown || "").split(/\r?\n/)) {
-    const definition = line.match(
-      /^ {0,3}\[([^\]]+)\]:[ \t]*(?:<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"]*"|'[^']*'|\([^)]*\)))?[ \t]*$/,
-    );
-    if (definition) {
-      definitions.add(normalizeReferenceLinkLabel(definition[1]));
+  let paragraphOpen = false;
+  const definitionPattern =
+    /^ {0,3}\\[([^\\]]+)\\]:[ \\t]*(?:<[^>\\n]*>|(?:\\\\.|[^ \\t]+))(?:[ \\t]+(?:"[^"]*"|'[^']*'|\\([^)]*\\)))?[ \\t]*$/;
+
+  for (const line of String(markdown || "").split(/\\r?\\n/)) {
+    if (line.trim() === "") {
+      paragraphOpen = false;
+      continue;
     }
+
+    const definition = line.match(definitionPattern);
+    if (definition) {
+      // A reference definition is a block-level construct and cannot interrupt
+      // an open paragraph. Do not normalize shortcut links using a definition
+      // that Markdown would render as literal paragraph text.
+      if (!paragraphOpen) {
+        definitions.add(normalizeReferenceLinkLabel(definition[1]));
+      }
+      continue;
+    }
+
+    const isAtxHeading = /^ {0,3}#{1,6}(?:[ \\t]+|$)/.test(line);
+    const isFence = /^ {0,3}(?:`{3,}|~{3,})/.test(line);
+    const isThematicBreak = /^ {0,3}(?:(?:\\*[ \\t]*){3,}|(?:-[ \\t]*){3,}|(?:_[ \\t]*){3,})[ \\t]*$/.test(line);
+    const isListOrQuote = /^ {0,3}(?:>|[-+*][ \\t]+|1[.)][ \\t]+)/.test(line);
+    const isSetextUnderline = /^[ \\t]*(?:=+|-{1,})[ \\t]*$/.test(line);
+
+    if (isAtxHeading || isFence || isThematicBreak || isListOrQuote || isSetextUnderline) {
+      paragraphOpen = false;
+      continue;
+    }
+
+    // Ordinary nonblank text starts or continues a paragraph until a blank
+    // line or another block-level construct closes it.
+    paragraphOpen = true;
   }
+
   return definitions;
 }
 
@@ -706,6 +741,56 @@ function stripInlineEmphasis(text) {
   return normalized;
 }
 
+function stripInlineHtmlTags(text) {
+  const source = String(text || "");
+  let output = "";
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    if (source[cursor] !== "<") {
+      output += source[cursor];
+      cursor += 1;
+      continue;
+    }
+
+    const opening = source.slice(cursor).match(/^<\\/?[A-Za-z][A-Za-z0-9:-]*(?=[ \\t\\r\\n/>])/);
+    if (!opening) {
+      output += source[cursor];
+      cursor += 1;
+      continue;
+    }
+
+    let quote = null;
+    let tagEnd = -1;
+    for (let index = cursor + opening[0].length; index < source.length; index += 1) {
+      const character = source[index];
+      if (quote) {
+        if (character === quote) quote = null;
+        continue;
+      }
+      if (character === '"' || character === "'") {
+        quote = character;
+        continue;
+      }
+      if (character === ">") {
+        tagEnd = index;
+        break;
+      }
+    }
+
+    if (tagEnd < 0) {
+      output += source[cursor];
+      cursor += 1;
+      continue;
+    }
+
+    // Inline HTML contributes no text of its own to a rendered heading.
+    cursor = tagEnd + 1;
+  }
+
+  return output;
+}
+
 function normalizeInlineHeadingText(text, referenceDefinitions = new Set()) {
   const segments = [];
   let cursor = 0;
@@ -713,11 +798,11 @@ function normalizeInlineHeadingText(text, referenceDefinitions = new Set()) {
   while (cursor < text.length) {
     const codeStart = text.indexOf(INLINE_CODE_TEXT_START, cursor);
     if (codeStart < 0) {
-      segments.push(stripInlineEmphasis(stripInlineLinks(text.slice(cursor), referenceDefinitions)));
+      segments.push(stripInlineHtmlTags(stripInlineEmphasis(stripInlineLinks(text.slice(cursor), referenceDefinitions))));
       break;
     }
 
-    segments.push(stripInlineEmphasis(stripInlineLinks(text.slice(cursor, codeStart), referenceDefinitions)));
+    segments.push(stripInlineHtmlTags(stripInlineEmphasis(stripInlineLinks(text.slice(cursor, codeStart), referenceDefinitions))));
     const codeContentStart = codeStart + INLINE_CODE_TEXT_START.length;
     const codeEnd = text.indexOf(INLINE_CODE_TEXT_END, codeContentStart);
     if (codeEnd < 0) {
