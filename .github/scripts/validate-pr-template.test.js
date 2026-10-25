@@ -1042,3 +1042,64 @@ test("list-contained H2 headings after a blank line remain non-top-level", () =>
     "受け入れ条件との対応",
   ]);
 });
+
+
+test("tab-expanded list content indentation keeps following top-level H2 headings", () => {
+  const body = [
+    "## Why",
+    "-\tlist item",
+    "   ## 変更内容",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
+
+test("reference and shortcut reference links normalize only when definitions exist", () => {
+  const headingTemplate = [
+    "## Why",
+    "## 変更内容",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+  const body = [
+    "## [Why][section]",
+    "Reason.",
+    "## [変更内容][]",
+    "Changed.",
+    "## [受け入れ条件との対応]",
+    "Done.",
+    "",
+    "[section]: #why",
+    "[変更内容]: #changes",
+    "[受け入れ条件との対応]: #acceptance",
+  ].join("\n");
+  const result = validatePullRequestBody(headingTemplate, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
+
+test("bracketed heading text without reference definitions remains literal", () => {
+  assert.deepEqual(
+    extractH2Headings([
+      "## [Why]",
+      "## [Why][missing]",
+      "## [Literal] title",
+      "[section]: #other",
+    ].join("\n")),
+    ["[Why]", "[Why][missing]", "[Literal] title"],
+  );
+});

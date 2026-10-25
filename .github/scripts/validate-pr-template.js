@@ -397,7 +397,43 @@ function withoutRawHtmlBlocks(markdown) {
       continue;
     }
 
-    const currentIndent = line.match(/^ */)[0].length;
+    function indentationColumns(value) {
+      let column = 0;
+      for (const character of value) {
+        if (character === " ") {
+          column += 1;
+        } else if (character === "\t") {
+          column += 4 - (column % 4);
+        } else {
+          break;
+        }
+      }
+      return column;
+    }
+
+    function listContentColumn(markerIndent, marker, separator) {
+      let column = markerIndent + marker.length;
+      for (const character of separator) {
+        if (character === " ") {
+          column += 1;
+        } else if (character === "\t") {
+          column += 4 - (column % 4);
+        }
+      }
+      return column;
+    }
+
+    function afterIndentColumns(value, requestedColumns) {
+      let column = 0;
+      let index = 0;
+      while (index < value.length && (value[index] === " " || value[index] === "\t") && column < requestedColumns) {
+        column += value[index] === " " ? 1 : 4 - (column % 4);
+        index += 1;
+      }
+      return column >= requestedColumns ? value.slice(index) : null;
+    }
+
+    const currentIndent = indentationColumns(line);
     const listMarker = line.match(/^ {0,3}([-+*]|[0-9]{1,9}[.)])([ \t]+)/);
 
     // H2 headings inside a list item's content column are not top-level
@@ -408,14 +444,14 @@ function withoutRawHtmlBlocks(markdown) {
     if (activeList) {
       const isSiblingOrOuterListItem =
         listMarker && listMarker[0].length > 0 &&
-        listMarker[0].match(/^ */)[0].length <= activeList.markerIndent;
+        indentationColumns(line) <= activeList.markerIndent;
       if (isSiblingOrOuterListItem) {
         activeList = null;
       } else if (!listMarker && currentIndent < activeList.contentIndent) {
         activeList = null;
       } else if (currentIndent >= activeList.contentIndent) {
-        const listContent = line.slice(activeList.contentIndent);
-        if (/^ {0,3}##[ \t]+/.test(listContent)) {
+        const listContent = afterIndentColumns(line, activeList.contentIndent);
+        if (listContent !== null && /^ {0,3}##[ \t]+/.test(listContent)) {
           visibleLines.push("");
           paragraphOpen = false;
           continue;
@@ -471,11 +507,11 @@ function withoutRawHtmlBlocks(markdown) {
     );
     if (/^>/.test(content) || startsListItem) {
       if (listItem) {
-        const markerIndent = line.match(/^ */)[0].length;
+        const markerIndent = indentationColumns(line);
         if (!activeList || markerIndent <= activeList.markerIndent) {
           activeList = {
             markerIndent,
-            contentIndent: markerIndent + listItem[1].length + listItem[2].length,
+            contentIndent: listContentColumn(markerIndent, listItem[1], listItem[2]),
           };
         }
       }
@@ -533,7 +569,24 @@ function withoutRawHtmlBlocks(markdown) {
 
   return visibleLines.join("\n");
 }
-function stripInlineLinks(text) {
+function normalizeReferenceLinkLabel(label) {
+  return String(label || "").trim().replace(/[ \t\r\n]+/g, " ").toLowerCase();
+}
+
+function extractReferenceLinkDefinitions(markdown) {
+  const definitions = new Set();
+  for (const line of String(markdown || "").split(/\r?\n/)) {
+    const definition = line.match(
+      /^ {0,3}\[([^\]]+)\]:[ \t]*(?:<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"]*"|'[^']*'|\([^)]*\)))?[ \t]*$/,
+    );
+    if (definition) {
+      definitions.add(normalizeReferenceLinkLabel(definition[1]));
+    }
+  }
+  return definitions;
+}
+
+function stripInlineLinks(text, referenceDefinitions = new Set()) {
   const source = String(text || "");
   let output = "";
   let cursor = 0;
@@ -573,8 +626,34 @@ function stripInlineLinks(text) {
       break;
     }
 
-    if (source[labelEnd + 1] !== "(") {
-      output += source.slice(cursor, labelEnd + 1);
+    const afterLabel = source[labelEnd + 1];
+
+    if (afterLabel === "[") {
+      let referenceEnd = labelEnd + 2;
+      while (referenceEnd < source.length && source[referenceEnd] !== "]") {
+        if (source[referenceEnd] === "\\") referenceEnd += 1;
+        referenceEnd += 1;
+      }
+      if (referenceEnd < source.length) {
+        const explicitLabel = source.slice(labelEnd + 2, referenceEnd);
+        const referenceLabel = normalizeReferenceLinkLabel(explicitLabel || source.slice(open + 1, labelEnd));
+        if (referenceDefinitions.has(referenceLabel)) {
+          output += source.slice(cursor, open) + source.slice(open + 1, labelEnd);
+        } else {
+          output += source.slice(cursor, referenceEnd + 1);
+        }
+        cursor = referenceEnd + 1;
+        continue;
+      }
+    }
+
+    if (afterLabel !== "(") {
+      const shortcutLabel = normalizeReferenceLinkLabel(source.slice(open + 1, labelEnd));
+      if (referenceDefinitions.has(shortcutLabel)) {
+        output += source.slice(cursor, open) + source.slice(open + 1, labelEnd);
+      } else {
+        output += source.slice(cursor, labelEnd + 1);
+      }
       cursor = labelEnd + 1;
       continue;
     }
@@ -621,18 +700,18 @@ function stripInlineEmphasis(text) {
   return normalized;
 }
 
-function normalizeInlineHeadingText(text) {
+function normalizeInlineHeadingText(text, referenceDefinitions = new Set()) {
   const segments = [];
   let cursor = 0;
 
   while (cursor < text.length) {
     const codeStart = text.indexOf(INLINE_CODE_TEXT_START, cursor);
     if (codeStart < 0) {
-      segments.push(stripInlineEmphasis(stripInlineLinks(text.slice(cursor))));
+      segments.push(stripInlineEmphasis(stripInlineLinks(text.slice(cursor), referenceDefinitions)));
       break;
     }
 
-    segments.push(stripInlineEmphasis(stripInlineLinks(text.slice(cursor, codeStart))));
+    segments.push(stripInlineEmphasis(stripInlineLinks(text.slice(cursor, codeStart), referenceDefinitions)));
     const codeContentStart = codeStart + INLINE_CODE_TEXT_START.length;
     const codeEnd = text.indexOf(INLINE_CODE_TEXT_END, codeContentStart);
     if (codeEnd < 0) {
@@ -649,8 +728,10 @@ function normalizeInlineHeadingText(text) {
 
 function extractH2Headings(markdown) {
   const headings = [];
+  const cleanedMarkdown = withoutCommentsAndCode(markdown);
+  const referenceDefinitions = extractReferenceLinkDefinitions(cleanedMarkdown);
 
-  for (const line of withoutCommentsAndCode(markdown).split(/\r?\n/)) {
+  for (const line of cleanedMarkdown.split(/\r?\n/)) {
     // CommonMark ATX headings allow up to three leading spaces and an optional
     // closing sequence of hash characters preceded by whitespace.
     const match = line.match(/^ {0,3}##[ \t]+(.+?)[ \t]*$/);
@@ -659,7 +740,7 @@ function extractH2Headings(markdown) {
     }
 
     const rawHeading = match[1].replace(/[ \t]+#+[ \t]*$/, "").trim();
-    const heading = normalizeInlineHeadingText(rawHeading).trim();
+    const heading = normalizeInlineHeadingText(rawHeading, referenceDefinitions).trim();
     if (heading) {
       headings.push(heading);
     }
