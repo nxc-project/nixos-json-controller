@@ -1018,6 +1018,34 @@ test("inline links in H2 titles normalize to their rendered link text", () => {
 });
 
 
+test("inline links with code spans in their labels normalize to rendered text", () => {
+  const tick = String.fromCharCode(96);
+  const headingTemplate = [
+    "## How to use nxc",
+    "## Literal [x] syntax",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+  const body = [
+    "## [How to use " + tick + "nxc" + tick + "](#usage)",
+    "Reason.",
+    "## [Literal " + tick + "[x]" + tick + " syntax](#literal)",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+
+  const result = validatePullRequestBody(headingTemplate, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "How to use nxc",
+    "Literal [x] syntax",
+    "受け入れ条件との対応",
+  ]);
+});
+
+
 test("H2 headings inside list item content do not satisfy top-level required sections", () => {
   const headingTemplate = [
     "## Why",
