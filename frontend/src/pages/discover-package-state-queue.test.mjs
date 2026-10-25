@@ -18,7 +18,7 @@ test("takes at most 40 package IDs and leaves the rest queued", () => {
 });
 
 test("returns an empty batch for an empty queue", () => {
-  const pending = new Set<string>();
+  const pending = new Set();
 
   assert.deepEqual(takePackageStateBatch(pending), []);
   assert.equal(pending.size, 0);

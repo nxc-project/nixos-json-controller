@@ -247,7 +247,6 @@ function Discover() {
     [resetQueuedPackageStates],
   );
 
-
   const loadMoreResults = useCallback(
     (retry = false) => {
       const searchQuery = submittedQuery.trim();
