@@ -196,6 +196,8 @@ function withoutInlineCodeAndHtmlComments(markdown) {
   return output.join("");
 }
 
+const HTML_CHARACTER_REFERENCES = require("./html-character-references.json");
+
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -1275,39 +1277,7 @@ function stripInlineHtmlTags(text) {
 
 function decodeMarkdownEscapesAndEntities(text) {
   const source = String(text || "");
-  const namedEntities = {
-    amp: "&",
-    apos: "'",
-    ast: "*",
-    copy: "\u00a9",
-    curren: "\u00a4",
-    deg: "\u00b0",
-    divide: "\u00f7",
-    euro: "\u20ac",
-    gt: ">",
-    hellip: "\u2026",
-    laquo: "\u00ab",
-    ldquo: "\u201c",
-    lsquo: "\u2018",
-    lt: "<",
-    mdash: "\u2014",
-    micro: "\u00b5",
-    middot: "\u00b7",
-    nbsp: "\u00a0",
-    ndash: "\u2013",
-    para: "\u00b6",
-    plusmn: "\u00b1",
-    pound: "\u00a3",
-    quot: "\"",
-    raquo: "\u00bb",
-    rdquo: "\u201d",
-    reg: "\u00ae",
-    rsquo: "\u2019",
-    sect: "\u00a7",
-    trade: "\u2122",
-    times: "\u00d7",
-    yen: "\u00a5",
-  };
+  const namedEntities = HTML_CHARACTER_REFERENCES;
 
   let output = "";
   for (let index = 0; index < source.length;) {
