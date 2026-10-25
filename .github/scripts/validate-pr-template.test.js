@@ -951,6 +951,47 @@ test("fenced code blocks opened inside list items cannot satisfy required sectio
   }
 });
 
+test("ordered-list fences respect paragraph interruption rules", () => {
+  const fence = String.fromCharCode(96).repeat(3);
+  const headingTemplate = ["## Why", "## 補足・設計詳細"].join("\n");
+
+  // Ordered markers other than 1 cannot interrupt an open paragraph, so the
+  // H2 on the next line is real content rather than fenced-code content.
+  for (const marker of ["2. ", "3) "]) {
+    const body = [
+      "## Why",
+      "Reason text.",
+      marker + fence + "markdown",
+      "## 補足・設計詳細",
+      fence,
+    ].join("\n");
+    const result = validatePullRequestBody(headingTemplate, body);
+
+    assert.equal(result.ok, true, marker);
+    assert.deepEqual(result.missingHeadings, [], marker);
+    assert.deepEqual(extractH2Headings(body), [
+      "Why",
+      "補足・設計詳細",
+    ], marker);
+  }
+
+  // With no open paragraph, the same ordered markers do start a list; its
+  // fenced contents must not satisfy the required section.
+  for (const marker of ["2. ", "3) "]) {
+    const body = [
+      "## Why",
+      marker + fence + "markdown",
+      "## 補足・設計詳細",
+      fence,
+    ].join("\n");
+    const result = validatePullRequestBody(headingTemplate, body);
+
+    assert.equal(result.ok, false, marker);
+    assert.deepEqual(result.missingHeadings, ["補足・設計詳細"], marker);
+    assert.deepEqual(extractH2Headings(body), ["Why"], marker);
+  }
+});
+
 test("inline links in H2 titles normalize to their rendered link text", () => {
   const headingTemplate = [
     "## Why",
