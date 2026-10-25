@@ -1292,6 +1292,52 @@ test("invalid inline link destinations remain literal in H2 headings", () => {
   ]);
 });
 
+test("inline link destinations reject escaped whitespace but preserve escaped punctuation", () => {
+  const slash = String.fromCharCode(92);
+  const invalidDestinations = [
+    "not" + slash + " a link",
+    "not" + slash + "\ta link",
+  ];
+
+  for (const destination of invalidDestinations) {
+    const body = [
+      "## [Why](" + destination + ")",
+      "Reason.",
+      "## 変更内容",
+      "Changed.",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(template, body);
+
+    assert.equal(result.ok, false, JSON.stringify(destination));
+    assert.deepEqual(result.missingHeadings, ["Why"], JSON.stringify(destination));
+    assert.deepEqual(extractH2Headings(body), [
+      "[Why](" + destination + ")",
+      "変更内容",
+      "受け入れ条件との対応",
+    ], JSON.stringify(destination));
+  }
+
+  const escapedPunctuationBody = [
+    "## [Why](path" + slash + "(section" + slash + "))",
+    "Reason.",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const escapedPunctuationResult = validatePullRequestBody(template, escapedPunctuationBody);
+
+  assert.equal(escapedPunctuationResult.ok, true);
+  assert.deepEqual(escapedPunctuationResult.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(escapedPunctuationBody), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
+
 test("reference definitions reject unbalanced bare destinations", () => {
   const body = [
     "## [Why]",
