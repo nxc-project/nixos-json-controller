@@ -1267,33 +1267,26 @@ function stripInlineHtmlTags(text) {
 }
 
 function normalizeInlineHeadingText(text, referenceDefinitions = new Set()) {
-  // Strip link syntax before splitting the inline-code markers. A valid link
-  // label may itself contain an inline code span, so parsing each segment
-  // separately would prevent the link parser from seeing the complete label.
+  // Strip link syntax before protecting code spans. A link label may contain
+  // inline code, and emphasis markers outside that span must still pair across it.
   const linkedText = stripInlineLinks(text, referenceDefinitions);
-  const segments = [];
-  let cursor = 0;
+  const codeContents = [];
+  const protectedText = linkedText.replace(
+    new RegExp(INLINE_CODE_TEXT_START + "([\\s\\S]*?)" + INLINE_CODE_TEXT_END, "g"),
+    (_match, content) => {
+      const token = "\uE002" + codeContents.length + "\uE003";
+      codeContents.push(content);
+      return token;
+    },
+  );
 
-  while (cursor < linkedText.length) {
-    const codeStart = linkedText.indexOf(INLINE_CODE_TEXT_START, cursor);
-    if (codeStart < 0) {
-      segments.push(stripInlineHtmlTags(stripInlineEmphasis(linkedText.slice(cursor))));
-      break;
-    }
-
-    segments.push(stripInlineHtmlTags(stripInlineEmphasis(linkedText.slice(cursor, codeStart))));
-    const codeContentStart = codeStart + INLINE_CODE_TEXT_START.length;
-    const codeEnd = linkedText.indexOf(INLINE_CODE_TEXT_END, codeContentStart);
-    if (codeEnd < 0) {
-      segments.push(linkedText.slice(codeContentStart));
-      break;
-    }
-
-    segments.push(linkedText.slice(codeContentStart, codeEnd));
-    cursor = codeEnd + INLINE_CODE_TEXT_END.length;
-  }
-
-  return segments.join("");
+  // The placeholder contains no Markdown delimiters, so code contents remain
+  // literal while emphasis around a code span is normalized across the heading.
+  let normalized = stripInlineHtmlTags(stripInlineEmphasis(protectedText));
+  codeContents.forEach((content, index) => {
+    normalized = normalized.replace("\uE002" + index + "\uE003", content);
+  });
+  return normalized;
 }
 function extractH2Headings(markdown) {
   const headings = [];
