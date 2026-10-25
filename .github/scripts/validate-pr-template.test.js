@@ -1046,6 +1046,38 @@ test("inline links with code spans in their labels normalize to rendered text", 
 });
 
 
+test("emphasis around inline code spans normalizes across the full heading", () => {
+  const tick = String.fromCharCode(96);
+  const headingTemplate = [
+    "## How to use nxc",
+    "## Build with nxc",
+    "## Keep a_b literal",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+  const body = [
+    "## **How to use " + tick + "nxc" + tick + "**",
+    "Reason.",
+    "## *Build with " + tick + "nxc" + tick + "*",
+    "Changed.",
+    "## **Keep " + tick + "a_b" + tick + " literal**",
+    "Literal code content should not be interpreted as emphasis.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+
+  const result = validatePullRequestBody(headingTemplate, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "How to use nxc",
+    "Build with nxc",
+    "Keep a_b literal",
+    "受け入れ条件との対応",
+  ]);
+});
+
+
 test("H2 headings inside list item content do not satisfy top-level required sections", () => {
   const headingTemplate = [
     "## Why",
