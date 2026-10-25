@@ -1355,3 +1355,74 @@ test("setext-like lines without a preceding paragraph do not interrupt definitio
     "受け入れ条件との対応",
   ]);
 });
+
+
+test("reference definitions reject destinations with a dangling backslash", () => {
+  const trailingBackslash = String.fromCharCode(92);
+  const definitions = [
+    "[Why]: /broken" + trailingBackslash,
+    "[Why]: <broken" + trailingBackslash + ">",
+  ];
+
+  for (const definition of definitions) {
+    const body = [
+      "## [Why]",
+      definition,
+      "## 変更内容",
+      "Changed.",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(template, body);
+
+    assert.equal(result.ok, false, definition);
+    assert.deepEqual(result.missingHeadings, ["Why"], definition);
+    assert.deepEqual(extractH2Headings(body), [
+      "[Why]",
+      "変更内容",
+      "受け入れ条件との対応",
+    ], definition);
+  }
+});
+
+test("setext-like lines without a preceding paragraph do not hide later inline HTML headings", () => {
+  const body = [
+    "## Why",
+    "===",
+    "<custom-tag>",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});
+
+test("valid reference definitions do not open a paragraph before a type-7 HTML block", () => {
+  const body = [
+    "## Why",
+    "[foo]: /url",
+    "<custom-tag>",
+    "## 変更内容",
+    "This apparent heading is part of the raw HTML block.",
+    "",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["変更内容"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "受け入れ条件との対応",
+  ]);
+});

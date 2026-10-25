@@ -488,6 +488,21 @@ function withoutRawHtmlBlocks(markdown) {
 
     const content = contentMatch[1];
 
+    // A valid reference definition is a block-level construct, not paragraph
+    // text. Keep its paragraph state unchanged so a following type-7 HTML tag
+    // starts a raw HTML block when Markdown permits it.
+    const referenceDefinition = content.match(
+      /^\\[([^\\]]+)\\]:[ \\t]*(<[^>\\n]*>|(?:\\\\.|[^ \\t]+))(?:[ \\t]+(?:"[^"\\n]*"|'[^'\\n]*'|\\([^)\\n]*\\)))?[ \\t]*$/,
+    );
+    if (
+      referenceDefinition &&
+      isValidLinkDestinationToken(referenceDefinition[2]) &&
+      !paragraphOpen
+    ) {
+      visibleLines.push(line);
+      continue;
+    }
+
     // ATX headings interrupt paragraphs.
     if (/^#{1,6}(?:[ \t]+|$)/.test(content)) {
       visibleLines.push(line);
@@ -495,11 +510,13 @@ function withoutRawHtmlBlocks(markdown) {
       continue;
     }
 
-    // Thematic breaks and setext underlines close the current paragraph too.
-    if (
-      /^(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})$/.test(content) ||
-      /^(?:=+[ \t]*|-{1,2}[ \t]*)$/.test(content)
-    ) {
+    // Thematic breaks can interrupt a paragraph, but setext underlines
+    // are valid only when there is a preceding open paragraph to underline.
+    const isThematicBreak =
+      /^(?:(?:\\*[ \\t]*){3,}|(?:-[ \\t]*){3,}|(?:_[ \\t]*){3,})$/.test(content);
+    const isSetextUnderline =
+      paragraphOpen && /^(?:=+[ \\t]*|-{1,2}[ \\t]*)$/.test(content);
+    if (isThematicBreak || isSetextUnderline) {
       visibleLines.push(line);
       paragraphOpen = false;
       continue;
@@ -592,6 +609,9 @@ function isValidLinkDestinationToken(destination) {
     for (let index = 0; index < inner.length; index += 1) {
       if (inner[index] === "\n" || inner[index] === "\r") return false;
       if (inner[index] === "\\") {
+        // A backslash must escape an actual following character; a final
+        // backslash means the apparent closing angle bracket was escaped.
+        if (index + 1 >= inner.length) return false;
         index += 1;
         continue;
       }
@@ -606,6 +626,8 @@ function isValidLinkDestinationToken(destination) {
     const character = token[index];
     if (/\s/.test(character) || character === "<" || character === ">") return false;
     if (character === "\\") {
+      // Do not accept a dangling escape at the end of a bare destination.
+      if (index + 1 >= token.length) return false;
       index += 1;
       continue;
     }
