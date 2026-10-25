@@ -1515,6 +1515,11 @@ test("heading normalization decodes Markdown escapes and character references ou
     { source: "## A &#x26; B", expected: "A & B" },
     { source: "## A &lt; B", expected: "A < B" },
     { source: "## 2026 &mdash; NXC", expected: "2026 \u2014 NXC" },
+    { source: "## Caf\u00e9", expected: "Caf\u00e9" },
+    { source: "## Caf&eacute;", expected: "Caf\u00e9" },
+    { source: "## \u2242\u0338", expected: "\u2242\u0338" },
+    { source: "## &NotEqualTilde;", expected: "\u2242\u0338" },
+    { source: "## &#x1F600;", expected: "\ud83d\ude00" },
   ];
 
   for (const item of cases) {
