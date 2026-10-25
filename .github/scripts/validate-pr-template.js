@@ -307,6 +307,7 @@ function withoutRawHtmlBlocks(markdown) {
   let activeBlock = null;
   let activeFence = null;
   let activeList = null;
+  let consecutiveBlankLines = 0;
   let paragraphOpen = false;
   const blockTags =
     "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|" +
@@ -388,14 +389,19 @@ function withoutRawHtmlBlocks(markdown) {
       }
     }
 
-    // Blank lines always close paragraphs, including lines made only of
-    // spaces or tabs. Keep list state across blank lines because a following
-    // sufficiently indented block may still belong to the list item.
+    // A single blank line may separate loose list-item blocks, but two
+    // consecutive blank lines end the list container. Do not let stale list
+    // state mask a subsequent top-level H2 that happens to be indented.
     if (line.trim() === "") {
+      consecutiveBlankLines += 1;
+      if (consecutiveBlankLines >= 2) {
+        activeList = null;
+      }
       visibleLines.push(line);
       paragraphOpen = false;
       continue;
     }
+    consecutiveBlankLines = 0;
 
     function indentationColumns(value) {
       let column = 0;
