@@ -887,9 +887,10 @@ function parseInlineLinkEnd(source, openingParen) {
       if (character === "\\") {
         const next = source[cursor + 1];
         if (next === " " || next === "\t" || next === "\n" || next === "\r") {
-          // CommonMark backslash escapes apply to ASCII punctuation only;
-          // a backslash cannot make whitespace part of a bare destination.
-          return -1;
+          // Whitespace is not escaped. Preserve the backslash literally, then
+          // let the next loop iteration terminate the bare destination.
+          cursor += 1;
+          continue;
         }
         if (next !== undefined && /^[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]$/.test(next)) {
           cursor += 2;
