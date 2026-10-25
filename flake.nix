@@ -124,7 +124,7 @@ EOF
               "$out/share/icons/hicolor/32x32/apps/nxc-app.png"
             install -Dm644 ${./frontend/src-tauri/icons/128x128.png} \
               "$out/share/icons/hicolor/128x128/apps/nxc-app.png"
-            install -Dm644 ${./frontend/src-tauri/icons/128x128@2x.png} \
+            install -Dm644 ${./frontend/src-tauri/icons}/128x128@2x.png \
               "$out/share/icons/hicolor/256x256/apps/nxc-app.png"
 
             wrapProgram "$out/bin/nxc-app" \
