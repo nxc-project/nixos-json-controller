@@ -975,3 +975,70 @@ test("inline links in H2 titles normalize to their rendered link text", () => {
     "受け入れ条件との対応",
   ]);
 });
+
+
+test("H2 headings inside list item content do not satisfy top-level required sections", () => {
+  const headingTemplate = [
+    "## Why",
+    "## 変更内容",
+    "## 受け入れ条件との対応",
+  ].join("\n");
+
+  for (const [marker, childIndent] of [
+    ["- Example:", "  "],
+    ["1. Example:", "   "],
+  ]) {
+    const nestedOnly = [
+      "## Why",
+      "Reason.",
+      marker,
+      childIndent + "## 変更内容",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const nestedResult = validatePullRequestBody(headingTemplate, nestedOnly);
+
+    assert.equal(nestedResult.ok, false, marker);
+    assert.deepEqual(nestedResult.missingHeadings, ["変更内容"], marker);
+    assert.deepEqual(extractH2Headings(nestedOnly), [
+      "Why",
+      "受け入れ条件との対応",
+    ], marker);
+
+    const topLevelAlsoPresent = [
+      nestedOnly,
+      "",
+      "## 変更内容",
+      "Changed.",
+    ].join("\n");
+    const topLevelResult = validatePullRequestBody(headingTemplate, topLevelAlsoPresent);
+
+    assert.equal(topLevelResult.ok, true, marker);
+    assert.deepEqual(topLevelResult.missingHeadings, [], marker);
+    assert.deepEqual(extractH2Headings(topLevelAlsoPresent), [
+      "Why",
+      "受け入れ条件との対応",
+      "変更内容",
+    ], marker);
+  }
+});
+
+test("list-contained H2 headings after a blank line remain non-top-level", () => {
+  const body = [
+    "## Why",
+    "Reason.",
+    "- Example:",
+    "",
+    "  ## 変更内容",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["変更内容"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "Why",
+    "受け入れ条件との対応",
+  ]);
+});

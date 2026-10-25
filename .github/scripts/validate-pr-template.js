@@ -306,6 +306,7 @@ function withoutRawHtmlBlocks(markdown) {
   const grave = String.fromCharCode(96);
   let activeBlock = null;
   let activeFence = null;
+  let activeList = null;
   let paragraphOpen = false;
   const blockTags =
     "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|" +
@@ -388,12 +389,38 @@ function withoutRawHtmlBlocks(markdown) {
     }
 
     // Blank lines always close paragraphs, including lines made only of
-    // spaces or tabs. Check this before indentation so they are not mistaken
-    // for indented code.
+    // spaces or tabs. Keep list state across blank lines because a following
+    // sufficiently indented block may still belong to the list item.
     if (line.trim() === "") {
       visibleLines.push(line);
       paragraphOpen = false;
       continue;
+    }
+
+    const currentIndent = line.match(/^ */)[0].length;
+    const listMarker = line.match(/^ {0,3}([-+*]|[0-9]{1,9}[.)])([ \t]+)/);
+
+    // H2 headings inside a list item's content column are not top-level
+    // template sections. Ignore them for section matching, but keep normal
+    // parsing for the rest of the list content so existing HTML/code handling
+    // continues to work. A non-indented line outside a sibling list item ends
+    // the current list container.
+    if (activeList) {
+      const isSiblingOrOuterListItem =
+        listMarker && listMarker[0].length > 0 &&
+        listMarker[0].match(/^ */)[0].length <= activeList.markerIndent;
+      if (isSiblingOrOuterListItem) {
+        activeList = null;
+      } else if (!listMarker && currentIndent < activeList.contentIndent) {
+        activeList = null;
+      } else if (currentIndent >= activeList.contentIndent) {
+        const listContent = line.slice(activeList.contentIndent);
+        if (/^ {0,3}##[ \t]+/.test(listContent)) {
+          visibleLines.push("");
+          paragraphOpen = false;
+          continue;
+        }
+      }
     }
 
     // An indented line continues an already-open paragraph, but starts
@@ -431,8 +458,27 @@ function withoutRawHtmlBlocks(markdown) {
     }
 
     // Block quote and list item markers start block containers and close
-    // a paragraph at the current nesting level.
-    if (/^>/.test(content) || /^(?:[-+*][ \t]+|0{0,8}1[.)][ \t]+)/.test(content)) {
+    // a paragraph at the current nesting level. Track a list item's content
+    // column so a child H2 cannot be mistaken for a top-level required section.
+    const listItem = content.match(/^([-+*]|[0-9]{1,9}[.)])([ \t]+)/);
+    const startsOrderedList = listItem && /^[0-9]{1,9}[.)]$/.test(listItem[1]) &&
+      /^0{0,8}1[.)]$/.test(listItem[1]);
+    const startsListItem = listItem && (
+      !paragraphOpen ||
+      !/^[0-9]/.test(listItem[1]) ||
+      startsOrderedList ||
+      (activeList && line.match(/^ */)[0].length >= activeList.contentIndent)
+    );
+    if (/^>/.test(content) || startsListItem) {
+      if (listItem) {
+        const markerIndent = line.match(/^ */)[0].length;
+        if (!activeList || markerIndent <= activeList.markerIndent) {
+          activeList = {
+            markerIndent,
+            contentIndent: markerIndent + listItem[1].length + listItem[2].length,
+          };
+        }
+      }
       visibleLines.push(line);
       paragraphOpen = false;
       continue;
