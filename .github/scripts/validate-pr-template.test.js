@@ -1199,3 +1199,74 @@ test("inline HTML tags in H2 titles normalize to rendered heading text", () => {
     "受け入れ条件との対応",
   ]);
 });
+
+
+test("malformed or escaped inline HTML tag-like text cannot satisfy required headings", () => {
+  const bodies = [
+    {
+      heading: "## <strong foo=>Why</strong>",
+      expected: "<strong foo=>Why",
+    },
+    {
+      heading: "## <strong data-label='unterminated>Why</strong>",
+      expected: "<strong data-label='unterminated>Why",
+    },
+    {
+      heading: "## \\<strong>Why\\</strong>",
+      expected: "\\<strong>Why\\</strong>",
+    },
+  ];
+
+  for (const item of bodies) {
+    const body = [
+      item.heading,
+      "Reason.",
+      "## 変更内容",
+      "Changed.",
+      "## 受け入れ条件との対応",
+      "Done.",
+    ].join("\n");
+    const result = validatePullRequestBody(template, body);
+
+    assert.equal(result.ok, false, item.heading);
+    assert.deepEqual(result.missingHeadings, ["Why"], item.heading);
+    assert.equal(extractH2Headings(body)[0], item.expected, item.heading);
+  }
+});
+
+test("valid inline HTML attributes normalize to their rendered heading text", () => {
+  const body = [
+    "## <strong data-label='a > b' disabled>Why</strong>",
+    "Reason.",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.missingHeadings, []);
+});
+
+test("four-space setext-like lines do not interrupt paragraphs before reference definitions", () => {
+  const body = [
+    "## [Why]",
+    "Reason text",
+    "    ----",
+    "[Why]: /url",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const result = validatePullRequestBody(template, body);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missingHeadings, ["Why"]);
+  assert.deepEqual(extractH2Headings(body), [
+    "[Why]",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
+});

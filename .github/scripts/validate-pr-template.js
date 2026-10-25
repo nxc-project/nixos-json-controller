@@ -612,7 +612,7 @@ function extractReferenceLinkDefinitions(markdown) {
     const isFence = new RegExp("^ {0,3}(?:" + String.fromCharCode(96) + "{3,}|~{3,})").test(line);
     const isThematicBreak = /^ {0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})[ \t]*$/.test(line);
     const isListOrQuote = /^ {0,3}(?:>|[-+*][ \t]+|1[.)][ \t]+)/.test(line);
-    const isSetextUnderline = /^[ \t]*(?:=+|-{1,})[ \t]*$/.test(line);
+    const isSetextUnderline = /^ {0,3}(?:=+|-{1,})[ \t]*$/.test(line);
 
     if (isAtxHeading || isFence || isThematicBreak || isListOrQuote || isSetextUnderline) {
       paragraphOpen = false;
@@ -741,6 +741,104 @@ function stripInlineEmphasis(text) {
   return normalized;
 }
 
+function inlineHtmlTagEnd(source, startIndex) {
+  // Backslash-escaped '<' is literal text, not an HTML tag opener.
+  let backslashes = 0;
+  for (let index = startIndex - 1; index >= 0 && source[index] === "\\"; index -= 1) {
+    backslashes += 1;
+  }
+  if (backslashes % 2 === 1) {
+    return -1;
+  }
+
+  const rest = source.slice(startIndex);
+  const closing = rest.match(/^<\/([A-Za-z][A-Za-z0-9-]*)[ \t]*>/);
+  if (closing) {
+    return startIndex + closing[0].length;
+  }
+
+  const opening = rest.match(/^<([A-Za-z][A-Za-z0-9-]*)/);
+  if (!opening) {
+    return -1;
+  }
+
+  let cursor = startIndex + opening[0].length;
+  const isWhitespace = (character) => character === " " || character === "\t" || character === "\r" || character === "\n";
+
+  while (cursor < source.length) {
+    while (isWhitespace(source[cursor])) {
+      cursor += 1;
+    }
+
+    if (source[cursor] === ">") {
+      return cursor + 1;
+    }
+    if (source[cursor] === "/" && source[cursor + 1] === ">") {
+      return cursor + 2;
+    }
+
+    // Attribute names follow CommonMark's inline HTML grammar.
+    const attribute = source.slice(cursor).match(/^[A-Za-z_:][A-Za-z0-9:._-]*/);
+    if (!attribute) {
+      return -1;
+    }
+    cursor += attribute[0].length;
+
+    while (isWhitespace(source[cursor])) {
+      cursor += 1;
+    }
+
+    if (source[cursor] !== "=") {
+      // A boolean attribute is valid; the next loop validates its separator.
+      continue;
+    }
+
+    cursor += 1;
+    while (isWhitespace(source[cursor])) {
+      cursor += 1;
+    }
+
+    const quote = source[cursor];
+    if (quote === '"' || quote === "'") {
+      cursor += 1;
+      const valueEnd = source.indexOf(quote, cursor);
+      if (valueEnd < 0) {
+        return -1;
+      }
+      cursor = valueEnd + 1;
+    } else {
+      // Unquoted values cannot be empty or contain quotes, backticks, '=', '<', or '>'.
+      const valueStart = cursor;
+      while (
+        cursor < source.length &&
+        !isWhitespace(source[cursor]) &&
+        source[cursor] !== '"' &&
+        source[cursor] !== "'" &&
+        source.charCodeAt(cursor) !== 96 &&
+        source[cursor] !== "=" &&
+        source[cursor] !== "<" &&
+        source[cursor] !== ">"
+      ) {
+        cursor += 1;
+      }
+      if (cursor === valueStart) {
+        return -1;
+      }
+    }
+
+    if (
+      source[cursor] !== undefined &&
+      !isWhitespace(source[cursor]) &&
+      source[cursor] !== ">" &&
+      !(source[cursor] === "/" && source[cursor + 1] === ">")
+    ) {
+      return -1;
+    }
+  }
+
+  return -1;
+}
+
 function stripInlineHtmlTags(text) {
   const source = String(text || "");
   let output = "";
@@ -753,39 +851,15 @@ function stripInlineHtmlTags(text) {
       continue;
     }
 
-    const opening = source.slice(cursor).match(/^<\/?[A-Za-z][A-Za-z0-9:-]*(?=[ \t\r\n/>])/);
-    if (!opening) {
-      output += source[cursor];
-      cursor += 1;
-      continue;
-    }
-
-    let quote = null;
-    let tagEnd = -1;
-    for (let index = cursor + opening[0].length; index < source.length; index += 1) {
-      const character = source[index];
-      if (quote) {
-        if (character === quote) quote = null;
-        continue;
-      }
-      if (character === '"' || character === "'") {
-        quote = character;
-        continue;
-      }
-      if (character === ">") {
-        tagEnd = index;
-        break;
-      }
-    }
-
+    const tagEnd = inlineHtmlTagEnd(source, cursor);
     if (tagEnd < 0) {
       output += source[cursor];
       cursor += 1;
       continue;
     }
 
-    // Inline HTML contributes no text of its own to a rendered heading.
-    cursor = tagEnd + 1;
+    // Only valid CommonMark inline HTML tags are omitted from rendered text.
+    cursor = tagEnd;
   }
 
   return output;
