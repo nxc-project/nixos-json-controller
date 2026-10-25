@@ -498,7 +498,14 @@ function withoutRawHtmlBlocks(markdown) {
       // well so a destination or multi-line title cannot masquerade as an H2.
       visibleLines.push(line);
       for (let offset = 1; offset < referenceDefinition.lineCount; offset += 1) {
-        visibleLines.push("");
+        // Keep a destination continuation visible to the reference-definition
+        // collector; mask later title continuation lines so they cannot look
+        // like H2 headings.
+        visibleLines.push(
+          offset < referenceDefinition.destinationLineCount
+            ? lines[lineIndex + offset]
+            : "",
+        );
       }
       lineIndex += referenceDefinition.lineCount - 1;
       continue;
@@ -793,7 +800,12 @@ function parseReferenceLinkDefinition(linesOrLine, startIndex = 0) {
     }
   }
 
-  return { label, destination: destinationMatch.destination, lineCount: consumedLines };
+  return {
+    label,
+    destination: destinationMatch.destination,
+    lineCount: consumedLines,
+    destinationLineCount: destinationLineIndex - startIndex + 1,
+  };
 }
 function isValidLinkDestinationToken(destination) {
   const token = String(destination || "");
