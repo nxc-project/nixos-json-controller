@@ -16,10 +16,11 @@
         inherit system;
       };
       appstreamData = nixos-appstream-data.packages.${system}.appstream-data-all;
-      gsettingsSchemasPath = builtins.concatStringsSep ":" [
+      gsettingsSchemaDirs = [
         "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}"
         "${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}"
       ];
+      gsettingsSchemasPath = builtins.concatStringsSep ":" gsettingsSchemaDirs;
     in
     {
       devShells.${system}.default = pkgs.mkShell {
@@ -146,7 +147,8 @@ EOF
             test -s "$out/share/icons/hicolor/128x128/apps/nxc-app.png"
             test -s "$out/share/icons/hicolor/256x256/apps/nxc-app.png"
             grep -Fq "${appstreamData}" "$out/bin/nxc-app"
-            grep -Fq "${gsettingsSchemasPath}" "$out/bin/nxc-app"
+            grep -Fq "${builtins.elemAt gsettingsSchemaDirs 0}" "$out/bin/nxc-app"
+            grep -Fq "${builtins.elemAt gsettingsSchemaDirs 1}" "$out/bin/nxc-app"
           '';
 
           doCheck = false;
