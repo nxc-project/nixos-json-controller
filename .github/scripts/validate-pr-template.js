@@ -492,7 +492,7 @@ function withoutRawHtmlBlocks(markdown) {
     // text. Keep its paragraph state unchanged so a following type-7 HTML tag
     // starts a raw HTML block when Markdown permits it.
     const referenceDefinition = content.match(
-      /^\\[([^\\]]+)\\]:[ \\t]*(<[^>\\n]*>|(?:\\\\.|[^ \\t]+))(?:[ \\t]+(?:"[^"\\n]*"|'[^'\\n]*'|\\([^)\\n]*\\)))?[ \\t]*$/,
+      /^\[([^\]]+)\]:[ \t]*(<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'|\([^) \n]*\)))?[ \t]*$/,
     );
     if (
       referenceDefinition &&
@@ -513,9 +513,9 @@ function withoutRawHtmlBlocks(markdown) {
     // Thematic breaks can interrupt a paragraph, but setext underlines
     // are valid only when there is a preceding open paragraph to underline.
     const isThematicBreak =
-      /^(?:(?:\\*[ \\t]*){3,}|(?:-[ \\t]*){3,}|(?:_[ \\t]*){3,})$/.test(content);
+      /^(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})$/.test(content);
     const isSetextUnderline =
-      paragraphOpen && /^(?:=+[ \\t]*|-{1,2}[ \\t]*)$/.test(content);
+      paragraphOpen && /^(?:=+[ \t]*|-{1,2}[ \t]*)$/.test(content);
     if (isThematicBreak || isSetextUnderline) {
       visibleLines.push(line);
       paragraphOpen = false;
