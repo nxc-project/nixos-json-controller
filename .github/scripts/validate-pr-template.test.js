@@ -1872,3 +1872,52 @@ test("zero-padded ordered-list markers close paragraph state before reference de
     ], marker);
   }
 });
+
+
+test("collapses rendered whitespace in headings after entity decoding but preserves code-span spacing", () => {
+  const tick = String.fromCharCode(96);
+  const headings = extractH2Headings(
+    [
+      "## Why  now",
+      "## Why\t\t now",
+      "## Why&#10;now",
+      "## Why&#9;now",
+      "## Why " + tick + "a  b" + tick + " now",
+    ].join("\n"),
+  );
+
+  assert.deepEqual(headings, [
+    "Why now",
+    "Why now",
+    "Why now",
+    "Why now",
+    "Why a  b now",
+  ]);
+  assert.equal(
+    validatePullRequestBody("## Why now", "## Why&#10;now").ok,
+    true,
+  );
+});
+
+test("URI and email autolinks normalize to their visible labels instead of HTML tags", () => {
+  const body = [
+    "## <https://example.com>",
+    "## <https://example.com/path?a=1&b=2>",
+    "## <user@example.com>",
+    "## <strong>Visible text</strong>",
+  ].join("\n");
+
+  assert.deepEqual(extractH2Headings(body), [
+    "https://example.com",
+    "https://example.com/path?a=1&b=2",
+    "user@example.com",
+    "Visible text",
+  ]);
+  assert.equal(
+    validatePullRequestBody(
+      ["## https://example.com", "## user@example.com"].join("\n"),
+      ["## <https://example.com>", "## <user@example.com>"].join("\n"),
+    ).ok,
+    true,
+  );
+});

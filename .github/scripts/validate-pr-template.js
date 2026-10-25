@@ -1165,6 +1165,31 @@ function stripInlineEmphasis(text) {
   return normalized;
 }
 
+function inlineAutolinkAt(source, startIndex) {
+  // CommonMark autolinks share the angle-bracket syntax with inline HTML.
+  // Recognize them first so their delimiters are removed but their label stays.
+  let backslashes = 0;
+  for (let index = startIndex - 1; index >= 0 && source[index] === "\\"; index -= 1) {
+    backslashes += 1;
+  }
+  if (backslashes % 2 === 1) {
+    return null;
+  }
+
+  const rest = source.slice(startIndex);
+  const uri = rest.match(/^<([A-Za-z][A-Za-z0-9.+-]{1,31}:[^\u0000-\u0020<>]*)>/);
+  if (uri) {
+    return { end: startIndex + uri[0].length, text: uri[1] };
+  }
+
+  const email = rest.match(/^<([A-Za-z0-9.!#$%&'*+\/=?^_\`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*)>/);
+  if (email) {
+    return { end: startIndex + email[0].length, text: email[2] };
+  }
+
+  return null;
+}
+
 function inlineHtmlTagEnd(source, startIndex) {
   // Backslash-escaped '<' is literal text, not an HTML tag opener.
   let backslashes = 0;
@@ -1275,6 +1300,13 @@ function stripInlineHtmlTags(text) {
       continue;
     }
 
+    const autolink = inlineAutolinkAt(source, cursor);
+    if (autolink) {
+      output += autolink.text;
+      cursor = autolink.end;
+      continue;
+    }
+
     const tagEnd = inlineHtmlTagEnd(source, cursor);
     if (tagEnd < 0) {
       output += source[cursor];
@@ -1360,7 +1392,9 @@ function normalizeInlineHeadingText(text, referenceDefinitions = new Set()) {
   // The placeholder contains no Markdown delimiters, so code contents remain
   // literal while emphasis around a code span is normalized across the heading.
   let normalized = stripInlineHtmlTags(stripInlineEmphasis(protectedText));
-  normalized = decodeMarkdownEscapesAndEntities(normalized);
+  normalized = decodeMarkdownEscapesAndEntities(normalized)
+    // HTML collapses runs of spaces, tabs, and line breaks outside code spans.
+    .replace(/[ \t\r\n\f]+/g, " ");
   codeContents.forEach((content, index) => {
     normalized = normalized.replace("\uE002" + index + "\uE003", content);
   });
