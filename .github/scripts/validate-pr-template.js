@@ -878,8 +878,15 @@ function parseInlineLinkEnd(source, openingParen) {
     let closed = false;
     while (cursor < source.length) {
       const character = source[cursor];
-      if (character === "\n" || character === "\r") return -1;
+      const code = character.charCodeAt(0);
+      // CommonMark angle-bracket destinations cannot contain whitespace or
+      // control characters, even when preceded by a backslash.
+      if (code <= 0x20 || code === 0x7f) return -1;
       if (character === "\\") {
+        const next = source[cursor + 1];
+        if (next === undefined) return -1;
+        const nextCode = next.charCodeAt(0);
+        if (nextCode <= 0x20 || nextCode === 0x7f) return -1;
         cursor += 2;
         continue;
       }
@@ -1266,6 +1273,92 @@ function stripInlineHtmlTags(text) {
   return output;
 }
 
+function decodeMarkdownEscapesAndEntities(text) {
+  const source = String(text || "");
+  const namedEntities = {
+    amp: "&",
+    apos: "'",
+    ast: "*",
+    copy: "\u00a9",
+    curren: "\u00a4",
+    deg: "\u00b0",
+    divide: "\u00f7",
+    euro: "\u20ac",
+    gt: ">",
+    hellip: "\u2026",
+    laquo: "\u00ab",
+    ldquo: "\u201c",
+    lsquo: "\u2018",
+    lt: "<",
+    mdash: "\u2014",
+    micro: "\u00b5",
+    middot: "\u00b7",
+    nbsp: "\u00a0",
+    ndash: "\u2013",
+    para: "\u00b6",
+    plusmn: "\u00b1",
+    pound: "\u00a3",
+    quot: "\"",
+    raquo: "\u00bb",
+    rdquo: "\u201d",
+    reg: "\u00ae",
+    rsquo: "\u2019",
+    sect: "\u00a7",
+    trade: "\u2122",
+    times: "\u00d7",
+    yen: "\u00a5",
+  };
+
+  let output = "";
+  for (let index = 0; index < source.length;) {
+    const character = source[index];
+
+    // Backslash escapes apply only to ASCII punctuation. Process them in the
+    // same pass as entities so an escaped ampersand cannot start a character
+    // reference (for example, \&amp; renders literally as &amp;).
+    if (character === "\\" && index + 1 < source.length) {
+      const next = source[index + 1];
+      if (/^[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]$/.test(next)) {
+        output += next;
+        index += 2;
+        continue;
+      }
+    }
+
+    if (character === "&") {
+      const match = source.slice(index).match(/^&(#(?:[xX][0-9a-fA-F]+|[0-9]+)|[A-Za-z][A-Za-z0-9]+);/);
+      if (match) {
+        const reference = match[1];
+        let decoded;
+        if (reference[0] === "#") {
+          const isHex = reference[1] === "x" || reference[1] === "X";
+          const digits = reference.slice(isHex ? 2 : 1);
+          const codePoint = Number.parseInt(digits, isHex ? 16 : 10);
+          decoded = Number.isFinite(codePoint) &&
+            codePoint > 0 &&
+            codePoint <= 0x10ffff &&
+            !(codePoint >= 0xd800 && codePoint <= 0xdfff)
+            ? String.fromCodePoint(codePoint)
+            : "\ufffd";
+        } else if (Object.prototype.hasOwnProperty.call(namedEntities, reference)) {
+          decoded = namedEntities[reference];
+        }
+
+        if (decoded !== undefined) {
+          output += decoded;
+          index += match[0].length;
+          continue;
+        }
+      }
+    }
+
+    output += character;
+    index += 1;
+  }
+
+  return output;
+}
+
 function normalizeInlineHeadingText(text, referenceDefinitions = new Set()) {
   // Strip link syntax before protecting code spans. A link label may contain
   // inline code, and emphasis markers outside that span must still pair across it.
@@ -1283,6 +1376,7 @@ function normalizeInlineHeadingText(text, referenceDefinitions = new Set()) {
   // The placeholder contains no Markdown delimiters, so code contents remain
   // literal while emphasis around a code span is normalized across the heading.
   let normalized = stripInlineHtmlTags(stripInlineEmphasis(protectedText));
+  normalized = decodeMarkdownEscapesAndEntities(normalized);
   codeContents.forEach((content, index) => {
     normalized = normalized.replace("\uE002" + index + "\uE003", content);
   });
