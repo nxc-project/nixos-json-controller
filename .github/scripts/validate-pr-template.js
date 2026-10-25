@@ -1014,19 +1014,35 @@ function stripInlineLinks(text, referenceDefinitions = new Set()) {
   let output = "";
   let cursor = 0;
 
-  while (cursor < source.length) {
-    let open = source.indexOf("[", cursor);
+  function nextOpeningBracket(from) {
+    let open = source.indexOf("[", from);
     while (open >= 0) {
+      // Code-span contents are literal text: brackets inside them must not
+      // start a link or affect the balance of a surrounding link label.
+      const codeStart = source.lastIndexOf(INLINE_CODE_TEXT_START, open);
+      const codeEnd = source.lastIndexOf(INLINE_CODE_TEXT_END, open);
+      if (codeStart > codeEnd) {
+        const closingCode = source.indexOf(INLINE_CODE_TEXT_END, open);
+        open = closingCode < 0
+          ? -1
+          : source.indexOf("[", closingCode + INLINE_CODE_TEXT_END.length);
+        continue;
+      }
+
       let slashCount = 0;
       for (let index = open - 1; index >= 0 && source[index] === "\\"; index -= 1) {
         slashCount += 1;
       }
       if (slashCount % 2 === 0 && !(open > 0 && source[open - 1] === "!")) {
-        break;
+        return open;
       }
       open = source.indexOf("[", open + 1);
     }
+    return -1;
+  }
 
+  while (cursor < source.length) {
+    const open = nextOpeningBracket(cursor);
     if (open < 0) {
       output += source.slice(cursor);
       break;
@@ -1035,6 +1051,19 @@ function stripInlineLinks(text, referenceDefinitions = new Set()) {
     let depth = 1;
     let labelEnd = open + 1;
     while (labelEnd < source.length && depth > 0) {
+      if (source.startsWith(INLINE_CODE_TEXT_START, labelEnd)) {
+        // Keep code-span punctuation out of the link-label delimiter parser.
+        const codeEnd = source.indexOf(
+          INLINE_CODE_TEXT_END,
+          labelEnd + INLINE_CODE_TEXT_START.length,
+        );
+        if (codeEnd < 0) {
+          labelEnd = source.length;
+          break;
+        }
+        labelEnd = codeEnd + INLINE_CODE_TEXT_END.length;
+        continue;
+      }
       if (source[labelEnd] === "\\") {
         labelEnd += 2;
         continue;
@@ -1096,7 +1125,6 @@ function stripInlineLinks(text, referenceDefinitions = new Set()) {
 
   return output;
 }
-
 function stripInlineEmphasis(text) {
   // Normalize simple CommonMark emphasis and strong-emphasis delimiters so
   // headings with equivalent rendered text compare equally.
@@ -1239,31 +1267,34 @@ function stripInlineHtmlTags(text) {
 }
 
 function normalizeInlineHeadingText(text, referenceDefinitions = new Set()) {
+  // Strip link syntax before splitting the inline-code markers. A valid link
+  // label may itself contain an inline code span, so parsing each segment
+  // separately would prevent the link parser from seeing the complete label.
+  const linkedText = stripInlineLinks(text, referenceDefinitions);
   const segments = [];
   let cursor = 0;
 
-  while (cursor < text.length) {
-    const codeStart = text.indexOf(INLINE_CODE_TEXT_START, cursor);
+  while (cursor < linkedText.length) {
+    const codeStart = linkedText.indexOf(INLINE_CODE_TEXT_START, cursor);
     if (codeStart < 0) {
-      segments.push(stripInlineHtmlTags(stripInlineEmphasis(stripInlineLinks(text.slice(cursor), referenceDefinitions))));
+      segments.push(stripInlineHtmlTags(stripInlineEmphasis(linkedText.slice(cursor))));
       break;
     }
 
-    segments.push(stripInlineHtmlTags(stripInlineEmphasis(stripInlineLinks(text.slice(cursor, codeStart), referenceDefinitions))));
+    segments.push(stripInlineHtmlTags(stripInlineEmphasis(linkedText.slice(cursor, codeStart))));
     const codeContentStart = codeStart + INLINE_CODE_TEXT_START.length;
-    const codeEnd = text.indexOf(INLINE_CODE_TEXT_END, codeContentStart);
+    const codeEnd = linkedText.indexOf(INLINE_CODE_TEXT_END, codeContentStart);
     if (codeEnd < 0) {
-      segments.push(text.slice(codeContentStart));
+      segments.push(linkedText.slice(codeContentStart));
       break;
     }
 
-    segments.push(text.slice(codeContentStart, codeEnd));
+    segments.push(linkedText.slice(codeContentStart, codeEnd));
     cursor = codeEnd + INLINE_CODE_TEXT_END.length;
   }
 
   return segments.join("");
 }
-
 function extractH2Headings(markdown) {
   const headings = [];
   const cleanedMarkdown = withoutCommentsAndCode(markdown);
