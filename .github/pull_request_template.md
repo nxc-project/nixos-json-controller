@@ -33,14 +33,14 @@
 
 ## 関連Issue・PBI
 
-- **対応Issue（Task / Bug / 調査など）：** `Closes #番号` または `Refs #番号`
-- **関連PBI：** `Refs #番号`（このPRでPBI全体を完了する場合は `Closes #番号`）
+- **対応Issue（Task / Bug / 調査など）：** `Closes #番号`（マージでIssue全体が完了）／`Refs #番号`（部分対応・調査）／`なし`（Issueを作らないPR）
+- **関連PBI：** `Refs #番号`（通常）／`Closes #番号`（このPR単体でPBI全条件を満たし、未完了の子Issueがない場合）
 
 <!--
 実装PRでは、直接対応する作業Issueと、その作業が成果に寄与するPBIの両方を記載する。
-対応Issueは、PRのマージでIssue全体が完了する場合だけ Closes、部分対応・調査・関連のみなら Refs を使う。
-PBIも、このPRで受け入れ条件をすべて満たしてPBI全体を完了する場合だけ Closes とし、複数の作業が残る場合は Refs とする。
-該当する作業IssueやPBIが存在しない場合は「なし」と記載する。PBIを特定できない場合は推測せず、その旨を明記する。
+対応Issueは、PRのマージでIssue全体が完了する場合だけ Closes、部分対応・調査・関連のみなら Refs を使う。Issueを作らないPRも許容し、その場合は「なし」と記載する。Issue欄を埋めるためだけにダミーIssueを作らない。
+PBIは通常 Refs を使い、ネイティブなSub-issuesの子Task / Bug / Spikeがすべて完了理由でクローズされたときにGitHub Actionsで自動クローズする。見送り・重複・未完了の子Issueがある場合は自動クローズしない。PBI自体をClosesにするのは、このPR単体でPBI全体が完了し、他に未完了の子Issueがない場合に限る。
+作業の一部だけが終わる場合は、残作業を別の子Issueとして同じPBIに紐づけてから、完了した範囲のIssueをクローズする。
 -->
 
 ## 補足・設計詳細

@@ -45,5 +45,8 @@ jobs:
       - name: Test PR template validator
         run: node --test pr/.github/scripts/validate-pr-template.test.js
 
+      - name: Test completed-PBI closure logic
+        run: node --test pr/.github/scripts/close-completed-pbi.test.js
+
       - name: Validate PR body against the base-branch template
         run: node pr/.github/scripts/validate-pr-template.js "$GITHUB_EVENT_PATH" base/.github/pull_request_template.md

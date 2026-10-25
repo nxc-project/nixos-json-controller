@@ -75,6 +75,13 @@ GitHubのIssue open/closedだけで進捗を表現しない。コメント、PR�
 
 これは推奨状態の定義であり、ネイティブProject boardのフィールドや自動化を実際に設定したという意味ではない。Project boardを設定する場合は、Type・Status・Priorityを別フィールドとし、既存Issueの一括登録や既定値も確認してから運用を始める。
 
+## PRマージとPBIの自動クローズ
+
+- PRのマージでIssue全体が完了するときは、PR本文で `Closes #番号` を指定する。部分対応や関連のみの場合は `Refs #番号` を使う。Issueなしで進めるPRも許容し、Issue / PBIの自動クローズは発生しない。
+- 完了した作業Issueに後続作業が残る場合は、残りを別の子Issueとして同じPBIに紐づける。完了した元Issueを閉じても、Openの子Issueがある限りPBIは閉じない。
+- GitHub Actionsは、親PBIのネイティブな子Issueを列挙し、子Issueが1件以上あり、すべて終了理由 `completed` で閉じている場合だけPBIを自動クローズする。`not_planned` / `duplicate` で閉じた子Issueや未完了の子Issueが残る場合はクローズしない。子Issueが存在しないPBIは、自動判定だけでは閉じない。
+- すべての子Issueが完了したのにPBIがOpenのまま残った場合は定期再確認で処理される。ネイティブな親子関係がないIssue本文中の `PBI: #番号` は自動クローズ判定の根拠にしない。
+
 ## PBLの更新ルール
 
 PBL #167 は初期スナップショットから始め、次のときに更新する。
