@@ -279,3 +279,48 @@ test("propagates API errors without closing a PBI", async () => {
   );
   assert.equal(calls.updates.length, 0);
 });
+
+
+test("continues scheduled reconciliation after a PBI API error and reports the failure", async () => {
+  const pbiOne = {
+    id: 2000,
+    number: 200,
+    type: { name: "PBI" },
+    state: "open",
+    state_reason: null,
+  };
+  const pbiTwo = {
+    id: 2010,
+    number: 201,
+    type: { name: "PBI" },
+    state: "open",
+    state_reason: null,
+  };
+  const { github, calls } = mockGithub({
+    issues: { 200: pbiOne, 201: pbiTwo },
+    children: { 201: [completedChild(301)] },
+  });
+  const originalRequest = github.request;
+  github.request = async (route, params) => {
+    if (route.endsWith("/sub_issues") && params.issue_number === 200) {
+      const error = new Error("temporary API failure");
+      error.status = 503;
+      throw error;
+    }
+    return originalRequest(route, params);
+  };
+  const core = makeCore();
+
+  await assert.rejects(
+    handleClosure({
+      github,
+      context: eventContext(0, { eventName: "schedule", action: undefined }),
+      core,
+    }),
+    /Failed to reconcile 1 PBI\(s\): #200/,
+  );
+
+  assert.deepEqual(calls.updates.map((update) => update.issue_number), [201]);
+  assert.ok(core.logs.warnings.some((message) => message.includes("PBI #200")));
+  assert.ok(core.logs.info.some((message) => message.includes("checked 2, closed 1")));
+});

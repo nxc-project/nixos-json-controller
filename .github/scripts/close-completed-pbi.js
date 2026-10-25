@@ -167,17 +167,29 @@ async function reconcileOpenPbis({ github, context, core }) {
   );
 
   let closedCount = 0;
+  const failures = [];
   for (const pbi of openPbis) {
-    const result = await closePbiIfComplete({
-      github,
-      owner,
-      repo,
-      pbiNumber: pbi.number,
-      core,
-    });
-    if (result.action === "closed") closedCount += 1;
+    try {
+      const result = await closePbiIfComplete({
+        github,
+        owner,
+        repo,
+        pbiNumber: pbi.number,
+        core,
+      });
+      if (result.action === "closed") closedCount += 1;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      core.warning(`Failed to reconcile PBI #${pbi.number}: ${message}`);
+      failures.push({ pbiNumber: pbi.number, message });
+    }
   }
   core.info(`PBI reconciliation complete: checked ${openPbis.length}, closed ${closedCount}.`);
+  if (failures.length > 0) {
+    throw new Error(
+      `Failed to reconcile ${failures.length} PBI(s): ${failures.map((failure) => `#${failure.pbiNumber}`).join(", ")}`,
+    );
+  }
   return { checked: openPbis.length, closed: closedCount };
 }
 

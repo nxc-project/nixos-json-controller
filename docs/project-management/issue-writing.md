@@ -210,11 +210,10 @@ NixOS 設定、ファイル書き込み、権限、サービス変更、rollback
 
 ## PRマージ後のIssue・PBIクローズ
 
-- PRのマージで対応するTask / Bug / Spikeの作業範囲全体が完了する場合は、PR本文で `Closes #番号` を使用する。一部の変更、調査、関連のみの場合は `Refs #番号` を使用する。PRを作るためにIssueが必須という運用にはせず、追跡Issueが不要なPRはテンプレートの関連Issue欄に「なし」と記載してよい。
-- 現在のIssueの完了条件を満たした一方で追加作業が必要な場合、残作業を別のTask / Bug / Spikeとして同じPBIの子Issueにする。元のIssueはその範囲が完了した時点で閉じられる。新しい子IssueがOpenなら、PBIはOpenのままになる。
-- PBIは通常、PR本文では `Refs #番号` で関連付ける。GitHub ActionsはネイティブなSub-issuesを確認し、子Issueが1件以上あり、すべてが `state=closed` かつ終了理由 `completed` のときに親PBIをクローズする。Open、`not_planned`、`duplicate`、未分類の子Issueが1件でもある場合、および子Issueが0件の場合は自動クローズしない。
-- PBIがこのPR単体で完全に達成され、他に未完了の子Issueもない場合に限り、PR本文でPBIに `Closes #番号` を使用できる。部分対応や複数作業が残る場合は `Refs` にして、自動クローズ判定に任せる。
-- 子Issueのクローズイベントは同時に発生することがあるため、workflowはイベント処理を直列化し、毎日の再確認で取りこぼしを回収する。本文の参照リンクではなく、GitHubのネイティブなSub-issues関係を判定に使う。
+- PRのマージで対応するTask / Bug / Spikeの作業範囲全体が完了する場合は、PR本文で `Closes #番号` を使用する。作業Issueを作って追跡するのが基本であり、部分対応のまま同じIssueを残すのではなく、残作業を別Issueとして同じPBIの子に追加してから、完了したIssueを閉じる。
+- Bug修正はIssueを作らず、新しいPRのみで対応してもよい。その場合はPRテンプレートの対応Issue欄に「なし」と記載する。Issueを作らないPRを禁止したり、ダミーIssueを要求したりしない。
+- 関連PBIはPR本文に通常の番号リンク（#番号）のみを記載する。クローズ用キーワードは付けない。GitHub ActionsはネイティブなSub-issuesを確認し、子Issueが1件以上あり、すべてが `state=closed` かつ終了理由 `completed` のときに親PBIをクローズする。Open、`not_planned`、`duplicate`、未分類の子Issueが1件でもある場合、および子Issueが0件の場合は自動クローズしない。
+- 子Issueのクローズイベントは同時に発生することがあるため、workflowはイベント処理を直列化し、毎日の再確認で取りこぼしを回収する。Issue本文の番号リンクではなく、GitHubのネイティブなSub-issues関係を判定に使う。
 
 ## Ready と Done
 
