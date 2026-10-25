@@ -1129,6 +1129,7 @@ test("bracketed heading text without reference definitions remains literal", () 
 });
 
 
+
 test("blank lines separated by a list-contained fenced code block do not end the list", () => {
   const fence = String.fromCharCode(96).repeat(3);
   const body = [
@@ -1144,7 +1145,7 @@ test("blank lines separated by a list-contained fenced code block do not end the
     "Changed.",
     "## 受け入れ条件との対応",
     "Done.",
-  ].join("\\n");
+  ].join("\n");
 
   const result = validatePullRequestBody(template, body);
 
@@ -1162,7 +1163,7 @@ test("reference-looking text inside an open paragraph is not a link definition",
     "Changed.",
     "## 受け入れ条件との対応",
     "Done.",
-  ].join("\\n");
+  ].join("\n");
 
   const result = validatePullRequestBody(template, body);
 
@@ -1175,7 +1176,7 @@ test("reference-looking text inside an open paragraph is not a link definition",
   ]);
 
   // A real definition may follow a completed heading block directly.
-  assert.deepEqual(extractH2Headings("## [Why]\\n[Why]: /why"), ["Why"]);
+  assert.deepEqual(extractH2Headings("## [Why]\n[Why]: /why"), ["Why"]);
 });
 
 test("inline HTML tags in H2 titles normalize to rendered heading text", () => {
@@ -1186,7 +1187,7 @@ test("inline HTML tags in H2 titles normalize to rendered heading text", () => {
     "Changed.",
     "## <span data-label='acceptance'>受け入れ条件との対応</span>",
     "Done.",
-  ].join("\\n");
+  ].join("\n");
 
   const result = validatePullRequestBody(template, body);
 

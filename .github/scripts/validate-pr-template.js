@@ -589,9 +589,9 @@ function extractReferenceLinkDefinitions(markdown) {
   const definitions = new Set();
   let paragraphOpen = false;
   const definitionPattern =
-    /^ {0,3}\\[([^\\]]+)\\]:[ \\t]*(?:<[^>\\n]*>|(?:\\\\.|[^ \\t]+))(?:[ \\t]+(?:"[^"]*"|'[^']*'|\\([^)]*\\)))?[ \\t]*$/;
+    /^ {0,3}\[([^\]]+)\]:[ \t]*(?:<[^>\n]*>|(?:\\.|[^ \t]+))(?:[ \t]+(?:"[^"]*"|'[^']*'|\([^)]*\)))?[ \t]*$/;
 
-  for (const line of String(markdown || "").split(/\\r?\\n/)) {
+  for (const line of String(markdown || "").split(/\r?\n/)) {
     if (line.trim() === "") {
       paragraphOpen = false;
       continue;
@@ -608,11 +608,11 @@ function extractReferenceLinkDefinitions(markdown) {
       continue;
     }
 
-    const isAtxHeading = /^ {0,3}#{1,6}(?:[ \\t]+|$)/.test(line);
-    const isFence = /^ {0,3}(?:`{3,}|~{3,})/.test(line);
-    const isThematicBreak = /^ {0,3}(?:(?:\\*[ \\t]*){3,}|(?:-[ \\t]*){3,}|(?:_[ \\t]*){3,})[ \\t]*$/.test(line);
-    const isListOrQuote = /^ {0,3}(?:>|[-+*][ \\t]+|1[.)][ \\t]+)/.test(line);
-    const isSetextUnderline = /^[ \\t]*(?:=+|-{1,})[ \\t]*$/.test(line);
+    const isAtxHeading = /^ {0,3}#{1,6}(?:[ \t]+|$)/.test(line);
+    const isFence = new RegExp("^ {0,3}(?:" + String.fromCharCode(96) + "{3,}|~{3,})").test(line);
+    const isThematicBreak = /^ {0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})[ \t]*$/.test(line);
+    const isListOrQuote = /^ {0,3}(?:>|[-+*][ \t]+|1[.)][ \t]+)/.test(line);
+    const isSetextUnderline = /^[ \t]*(?:=+|-{1,})[ \t]*$/.test(line);
 
     if (isAtxHeading || isFence || isThematicBreak || isListOrQuote || isSetextUnderline) {
       paragraphOpen = false;
@@ -753,7 +753,7 @@ function stripInlineHtmlTags(text) {
       continue;
     }
 
-    const opening = source.slice(cursor).match(/^<\\/?[A-Za-z][A-Za-z0-9:-]*(?=[ \\t\\r\\n/>])/);
+    const opening = source.slice(cursor).match(/^<\/?[A-Za-z][A-Za-z0-9:-]*(?=[ \t\r\n/>])/);
     if (!opening) {
       output += source[cursor];
       cursor += 1;
