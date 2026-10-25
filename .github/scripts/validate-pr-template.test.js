@@ -1336,6 +1336,30 @@ test("inline link destinations reject escaped whitespace but preserve escaped pu
     "変更内容",
     "受け入れ条件との対応",
   ]);
+
+  // A literal backslash may end a bare destination when followed by the
+  // whitespace separator before a valid title; the whitespace itself is not
+  // part of the destination.
+  const trailingBackslashBeforeTitleBody = [
+    "## [Why](path" + slash + ' "valid title")',
+    "Reason.",
+    "## 変更内容",
+    "Changed.",
+    "## 受け入れ条件との対応",
+    "Done.",
+  ].join("\n");
+  const trailingBackslashBeforeTitleResult = validatePullRequestBody(
+    template,
+    trailingBackslashBeforeTitleBody,
+  );
+
+  assert.equal(trailingBackslashBeforeTitleResult.ok, true);
+  assert.deepEqual(trailingBackslashBeforeTitleResult.missingHeadings, []);
+  assert.deepEqual(extractH2Headings(trailingBackslashBeforeTitleBody), [
+    "Why",
+    "変更内容",
+    "受け入れ条件との対応",
+  ]);
 });
 
 test("reference definitions reject unbalanced bare destinations", () => {
