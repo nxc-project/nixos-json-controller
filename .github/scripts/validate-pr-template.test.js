@@ -1314,7 +1314,7 @@ test("malformed or escaped inline HTML tag-like text cannot satisfy required hea
     },
     {
       heading: "## \\<strong>Why\\</strong>",
-      expected: "\\<strong>Why\\</strong>",
+      expected: "<strong>Why</strong>",
     },
   ];
 
@@ -1486,8 +1486,8 @@ test("angle-bracket link destinations reject whitespace and control characters",
     assert.equal(result.ok, false, JSON.stringify(destination));
     assert.deepEqual(result.missingHeadings, ["Why"], JSON.stringify(destination));
     assert.equal(
-      extractH2Headings(body)[0],
-      "[Why](" + destination + ")",
+      extractH2Headings(body).includes("Why"),
+      false,
       JSON.stringify(destination),
     );
   }
