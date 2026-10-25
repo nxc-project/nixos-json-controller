@@ -15,12 +15,19 @@ PBI Issues represent user value and are not themselves children of another PBI. 
 
 1. Read the current base-branch version of `.github/pull_request_template.md` before drafting or updating the PR body. Do this every time; do not assume a previous PR or remembered template is current.
 2. Use every H2 section in the template and complete it with accurate information. When a section is not applicable, write `該当なし` and briefly explain why instead of silently deleting the section. Do not leave template placeholders.
-3. Link the directly addressed Task/Bug/Spike using `Closes #N` only when merging the PR completes that entire Issue; use `Refs #N` for partial work or related investigations. Link the PBI with `Refs #N`, using `Closes` only when the PBI's full acceptance criteria are satisfied by this PR.
+3. Link the directly addressed Task/Bug/Spike using `Closes #N` when the PR completes that Issue. If follow-up work remains, create a separate Issue for it and close the completed Issue. Small bug fixes may be submitted as standalone PRs without creating an Issue; write `なし` in the template and do not create a dummy Issue. Link a related PBI using its number only; do not add a closing keyword to the PBI link because the automation closes a PBI when all native child Issues are completed.
 4. Report tests and CI only after checking their actual results for the current head commit. Explicitly state checks that were not run. Keep risks and unresolved questions visible.
 5. GitHub's pull request template is not automatically applied when creating a PR through the REST API or another direct integration. Include the complete, template-compliant body in the creation/update request.
 6. After creating or updating the PR, fetch the PR again and verify the saved body contains every heading from the current base-branch template and that the Issue/PBI links are correct.
 
 The dedicated PR-template validation workflow checks that PR bodies contain each H2 section from the base-branch template. This automated check complements, but does not replace, reading the template and completing its sections.
+
+## Issue / PBI completion lifecycle
+
+- When a PR is merged, use `Closes #N` for the Task/Bug/Spike Issue completed by that PR. If follow-up work remains after the current Issue's acceptance criteria are met, create a separate child Issue for the follow-up and close the completed Issue. Small bug fixes may be submitted as standalone PRs without an Issue; these PRs remain valid and do not trigger Issue/PBI closure automation.
+- Link a related PBI by its issue number only. Do not use a closing keyword on the PBI link; the automation closes the PBI when every native child Issue has state reason `completed`.
+- The `Close completed PBI` workflow closes a PBI only when it has at least one native GitHub Sub-issue and every child is closed with state reason `completed`. An open child, a child closed as `not_planned` or `duplicate`, an untyped/unrecognized child, or an empty child list prevents automatic closure. A daily reconciliation handles closure events that race with each other.
+- Parent-child relationships must be native GitHub Sub-issues; prose references alone do not establish a parent-child relationship.
 
 ## When reviewing a pull request
 

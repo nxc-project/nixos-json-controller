@@ -1,0 +1,38 @@
+name: Close completed PBI
+
+on:
+  issues:
+    types: [closed]
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+# Process close events serially. A later close event re-checks the current
+# state of the parent's full child list, avoiding races between sibling Issues.
+concurrency:
+  group: pbi-completion-${{ github.repository }}
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  close-completed-pbi:
+    name: Close PBI when every child is complete
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.repository.default_branch || 'main' }}
+          persist-credentials: false
+
+      - name: Check and close completed PBI
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const { handleClosure } = require("./.github/scripts/close-completed-pbi.js");
+            await handleClosure({ github, context, core });
