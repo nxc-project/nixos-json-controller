@@ -85,7 +85,7 @@ nix profile install github:nxc-project/nixos-json-controller#nxc-app
 nix profile upgrade nxc-app --refresh
 ```
 
-profile element 名が異なる場合は、`nix profile list` に表示された名前を指定してください。インストール後はアプリランチャーの **NXC Lounge**、またはターミナルの `nxc-app` コマンドで起動できます。GUI の削除は `nix profile remove nxc-app` で行え、CLI `nxc` とは独立しています。
+profile element 名が異なる場合は、`nix profile list` に表示された名前を指定してください。インストール後はアプリランチャーの **NXC LOUNGE**、またはターミナルの `nxc-app` コマンドで起動できます。GUI の削除は `nix profile remove nxc-app` で行え、CLI `nxc` とは独立しています。
 
 ソースから GUI を開発起動する手順は [GUI Development](GUI-Development.md) を参照してください。
 
