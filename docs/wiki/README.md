@@ -5,7 +5,7 @@
 ## ページ一覧
 
 - [Home](Home.md)：プロジェクト概要とナビゲーション
-- [Installation](Installation.md)：CLI のインストール・更新・削除
+- [Installation](Installation.md)：CLI とデスクトップ版 NXC LOUNGE のインストール・更新・削除
 - [CLI Usage](CLI-Usage.md)：コマンドリファレンス
 - [Safety and Architecture](Safety-and-Architecture.md)：設定変更の流れと安全設計
 - [GUI Development](GUI-Development.md)：NXC LOUNGE GUI の開発環境
