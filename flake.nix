@@ -112,7 +112,7 @@
             cat > "$out/share/applications/nxc-app.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
-Name=nxc App Store
+Name=NXC Lounge
 Comment=Browse and manage NixOS packages
 Exec=nxc-app
 Icon=nxc-app
@@ -135,7 +135,7 @@ EOF
             # drift away from the command and icon names used by the package.
             for field in \
               "Type=Application" \
-              "Name=nxc App Store" \
+              "Name=NXC Lounge" \
               "Exec=nxc-app" \
               "Icon=nxc-app" \
               "Terminal=false" \
@@ -154,7 +154,7 @@ EOF
           doCheck = false;
 
           meta = {
-            description = "nxc App Store GUI";
+            description = "NXC Lounge GUI";
             mainProgram = "nxc-app";
             platforms = [ "x86_64-linux" ];
           };

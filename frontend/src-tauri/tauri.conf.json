@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "nxc-app",
+  "productName": "NXC Lounge",
   "version": "0.1.0",
   "identifier": "io.github.ni-gihub.nxc-app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "nxc App Store",
+        "title": "NXC Lounge",
         "width": 800,
         "height": 600,
         "resizable": true,

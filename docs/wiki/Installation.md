@@ -2,7 +2,7 @@
 
 このページでは、現在利用可能な NXC CLI のインストール方法を説明します。
 
-> **注意:** デスクトップ版 App Store GUI は開発環境での起動・動作確認ができる段階です。GUI の本番配布用 package、ランチャー統合、profile の更新・削除手順は整備中のため、GUI を本番用パッケージとしてインストールできるとは案内していません。進捗は [Issue #101](https://github.com/Ni-gihub/nixos-json-controller/issues/101) を参照してください。
+> **注意:** デスクトップ版 NXC Lounge GUI は開発環境での起動・動作確認ができる段階です。GUI の本番配布用 package、ランチャー統合、profile の更新・削除手順は整備中のため、GUI を本番用パッケージとしてインストールできるとは案内していません。進捗は [Issue #101](https://github.com/Ni-gihub/nixos-json-controller/issues/101) を参照してください。
 
 ## 前提条件
 

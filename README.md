@@ -1,14 +1,14 @@
 # NixOS JSON Controller（NXC）
 
-NXC は、NixOS の設定を安全に変更するための CLI コントローラーと、そのコア機能を利用するデスクトップ版 App Store を開発するプロジェクトです。
+NXC は、NixOS の設定を安全に変更する CLI コントローラーと、Nixpkgs のパッケージを検索・管理するデスクトップ GUI「NXC Lounge」を開発するプロジェクトです。
 
 CLI ではパッケージの追加・削除やサービスの有効化・無効化を NixOS の宣言的な設定に反映し、必要に応じて nixos-rebuild switch まで実行します。GUI では Nixpkgs のパッケージを検索し、アプリの詳細やインストール状態を確認してインストール操作を行えます。
 
 ## 現在の状態
 
 - **CLI：** Nix profile からインストールして利用できます。
-- **GUI：** React / TypeScript と Tauri 2 で開発中です。開発環境での起動・動作確認ができます。
-- **GUI の本番インストール：** Nix profile からの配布、ランチャー統合、更新・削除手順は未整備です。実装は Issue [#101](https://github.com/Ni-gihub/nixos-json-controller/issues/101) で管理しています。
+- **GUI（NXC Lounge）：** React / TypeScript と Tauri 2 で開発中です。開発環境での起動・動作確認ができます。
+- **NXC Lounge の本番インストール：** Nix profile からの配布、ランチャー統合、更新・削除手順は未整備です。実装は Issue [#101](https://github.com/Ni-gihub/nixos-json-controller/issues/101) で管理しています。
 - **対応中の課題：** GUI の本番配布、Tauri の本番セキュリティ設定、Nixpkgs 検索の性能・結果上限、スクロール時の表示問題などは未完了 Issue で管理しています。主な項目は [#101](https://github.com/Ni-gihub/nixos-json-controller/issues/101)、[#106](https://github.com/Ni-gihub/nixos-json-controller/issues/106)、[#123](https://github.com/Ni-gihub/nixos-json-controller/issues/123)、[#126](https://github.com/Ni-gihub/nixos-json-controller/issues/126)、[#134](https://github.com/Ni-gihub/nixos-json-controller/issues/134) です。
 
 現在の Flake package は x86_64-linux を対象としています。
@@ -337,7 +337,7 @@ GUI 用の Flake package、Desktop Entry、静的なランチャーアイコン�
 
 # 関連 Issue（未完了の作業）
 
-## App Store本番配布
+## NXC Lounge（GUI）の本番配布
 - [#101 — PBI: nxc App StoreをNix profileからインストール・起動・更新・削除する](https://github.com/Ni-gihub/nixos-json-controller/issues/101)
 - [#169 — Task: GUI用Nix Flake packageを再現可能にビルドする](https://github.com/Ni-gihub/nixos-json-controller/issues/169)
 - [#170 — Task: GUI packageのデスクトップ統合と本番起動環境を整える](https://github.com/Ni-gihub/nixos-json-controller/issues/170)
