@@ -44,7 +44,7 @@ dry-run は本番実行の成功や、すべての副作用がないことを保
 
 パッケージの追加・削除では、再ビルド後にアクティブなシステム上の存在状態を確認します。検証に失敗した場合、NXC は設定の復元と必要な再ビルドを試みます。復元にも失敗した場合は、元のエラーと復元エラーの両方を確認してください。
 
-サービスの有効化・無効化でも、`rebuild` が有効で、設定に変更があった場合、または実行計画が再ビルドを要求する場合は、再ビルド後に `verify_service_state(...)` で有効な NixOS option を検証します。再ビルド自体に失敗した場合は変更した設定の復元を試み、再ビルドが成功して状態検証に失敗した場合は、設定の復元と復元後の再ビルドを試みます。`rebuild` が無効な場合は再ビルド後の状態検証を行わず、検証失敗を契機とする復元処理も行いません。過去の背景は [Issue #138](https://github.com/Ni-gihub/nixos-json-controller/issues/138) を参照してください。
+サービスの有効化・無効化でも、`rebuild` が有効で、設定に変更があった場合、または実行計画が再ビルドを要求する場合は、再ビルド後に `verify_service_state(...)` で有効な NixOS option を検証します。再ビルド自体に失敗した場合は変更した設定の復元を試み、再ビルドが成功して状態検証に失敗した場合は、設定の復元と復元後の再ビルドを試みます。`rebuild` が無効な場合は再ビルド後の状態検証を行わず、検証失敗を契機とする復元処理も行いません。過去の背景は [Issue #138](https://github.com/nxc-project/nixos-json-controller/issues/138) を参照してください。
 
 ## 権限
 
@@ -52,8 +52,8 @@ NixOS 設定の変更や再ビルドに必要な場合、sudo 認証が求めら
 
 ## 関連作業
 
-- [#105 — 設定変更の途中失敗で部分更新が残らないようにする](https://github.com/Ni-gihub/nixos-json-controller/issues/105)
-- [#136 — Nix 構文を誤認してパッケージ操作の意味を変えないようにする](https://github.com/Ni-gihub/nixos-json-controller/issues/136)
-- [#138 — サービス変更後の検証](https://github.com/Ni-gihub/nixos-json-controller/issues/138)
-- [#143 — コメントや文字列中のパスを import と誤認しない](https://github.com/Ni-gihub/nixos-json-controller/issues/143)
-- [#144 — シンボリックリンクされた設定ファイルを安全に扱う](https://github.com/Ni-gihub/nixos-json-controller/issues/144)
+- [#105 — 設定変更の途中失敗で部分更新が残らないようにする](https://github.com/nxc-project/nixos-json-controller/issues/105)
+- [#136 — Nix 構文を誤認してパッケージ操作の意味を変えないようにする](https://github.com/nxc-project/nixos-json-controller/issues/136)
+- [#138 — サービス変更後の検証](https://github.com/nxc-project/nixos-json-controller/issues/138)
+- [#143 — コメントや文字列中のパスを import と誤認しない](https://github.com/nxc-project/nixos-json-controller/issues/143)
+- [#144 — シンボリックリンクされた設定ファイルを安全に扱う](https://github.com/nxc-project/nixos-json-controller/issues/144)
