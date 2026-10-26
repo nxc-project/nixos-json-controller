@@ -2,7 +2,7 @@
 
 NixOS JSON Controller（NXC）は、NixOS の設定変更を安全に扱う CLI ツールと、Nixpkgs のパッケージを検索・管理するデスクトップ GUI「NXC Lounge」を開発するプロジェクトです。
 
-CLI はパッケージやサービスの変更を NixOS の宣言的な設定へ反映し、必要に応じてシステムの再ビルドまで実行します。GUI は React / TypeScript と Tauri 2 を利用しています。
+CLI はパッケージやサービスの変更を NixOS の宣言的な設定へ反映し、必要に応じてシステムの再ビルドまで実行します。NXC Lounge は React / TypeScript と Tauri 2 を利用しています。
 
 ## はじめに
 
