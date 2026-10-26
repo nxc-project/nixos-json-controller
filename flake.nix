@@ -103,7 +103,7 @@
           GSETTINGS_SCHEMAS_PATH = gsettingsSchemasPath;
 
           # Cargo names the executable after the Rust package ("app"); expose
-          # a stable command name and an explicit desktop entry with a static icon.
+          # a stable command name and an explicit desktop entry with the scalable SVG icon.
           postInstall = ''
             mv "$out/bin/app" "$out/bin/nxc-app"
 
@@ -120,12 +120,12 @@ Terminal=false
 Categories=System;Utility;
 EOF
 
-            install -Dm644 ${./frontend/src-tauri/icons/32x32.png} \
-              "$out/share/icons/hicolor/32x32/apps/nxc-app.png"
-            install -Dm644 ${./frontend/src-tauri/icons/128x128.png} \
-              "$out/share/icons/hicolor/128x128/apps/nxc-app.png"
-            install -Dm644 ${./frontend/src-tauri/icons}/128x128@2x.png \
+            # Replace the raster launcher icons with one resolution-independent SVG.
+            rm -f "$out/share/icons/hicolor/32x32/apps/nxc-app.png" \
+              "$out/share/icons/hicolor/128x128/apps/nxc-app.png" \
               "$out/share/icons/hicolor/256x256/apps/nxc-app.png"
+            install -Dm644 ${./frontend/src-tauri/icons/nxc-app.svg} \
+              "$out/share/icons/hicolor/scalable/apps/nxc-app.svg"
 
             wrapProgram "$out/bin/nxc-app" \
               --set NXC_APPSTREAM_DATA ${appstreamData} \
@@ -143,9 +143,10 @@ EOF
               grep -Fxq "$field" "$out/share/applications/nxc-app.desktop"
             done
             test -x "$out/bin/nxc-app"
-            test -s "$out/share/icons/hicolor/32x32/apps/nxc-app.png"
-            test -s "$out/share/icons/hicolor/128x128/apps/nxc-app.png"
-            test -s "$out/share/icons/hicolor/256x256/apps/nxc-app.png"
+            test -s "$out/share/icons/hicolor/scalable/apps/nxc-app.svg"
+            for icon_size in 32x32 128x128 256x256; do
+              test ! -e "$out/share/icons/hicolor/$icon_size/apps/nxc-app.png"
+            done
             grep -Fq "${appstreamData}" "$out/bin/nxc-app"
             grep -Fq "${builtins.elemAt gsettingsSchemaDirs 0}" "$out/bin/nxc-app"
             grep -Fq "${builtins.elemAt gsettingsSchemaDirs 1}" "$out/bin/nxc-app"
