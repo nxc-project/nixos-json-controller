@@ -17,7 +17,7 @@
 ## 初回のみ必要な設定
 
 1. リポジトリの **Settings → Features → Wikis** で Wiki が有効であることを確認します。
-2. [Wiki](https://github.com/Ni-gihub/nixos-json-controller/wiki) を開き、まだ初期化されていない場合は `Create the first page` からページを1つ作成して保存します。ダミーの本文で構いません。この操作は Wiki 用 Git リポジトリを初期化するために必要です。
+2. [Wiki](https://github.com/nxc-project/nixos-json-controller/wiki) を開き、まだ初期化されていない場合は `Create the first page` からページを1つ作成して保存します。ダミーの本文で構いません。この操作は Wiki 用 Git リポジトリを初期化するために必要です。
 3. リポジトリの **Settings → Actions → General** を開き、Workflow permissions の設定で Actions がワークフローに宣言された `contents: write` 権限を使用できることを確認します。
 
 同期ワークフローは、このリポジトリ自身の Wiki に `github.token` で書き込みます。別のリポジトリ用のトークンや追加の Secret は必要ありません。
@@ -38,7 +38,7 @@ PR が作成・更新されただけでは Wiki に公開しません。未レ�
 通常は GitHub Actions が自動同期するため、この手順は初回確認やワークフローの障害時にだけ使用します。リポジトリのルートで実行してください。Wiki を初期化してから使用します。
 
 ```sh
-git clone https://github.com/Ni-gihub/nixos-json-controller.wiki.git ../nixos-json-controller.wiki
+git clone https://github.com/nxc-project/nixos-json-controller.wiki.git ../nixos-json-controller.wiki
 
 for page in Home Installation CLI-Usage Safety-and-Architecture GUI-Development Troubleshooting Contributing; do
   cp "docs/wiki/$page.md" "../nixos-json-controller.wiki/$page.md"
@@ -58,7 +58,7 @@ If the Wiki clone directory already exists, update it with `git -C ../nixos-json
 1. `docs/wiki/` の該当 Markdown を編集します。
 2. ブランチで変更し、通常どおり PR を作成します。
 3. PR が `main` にマージされたら、Actions の `Publish GitHub Wiki` ワークフローが自動で Wiki に同期します。
-4. [公開 Wiki](https://github.com/Ni-gihub/nixos-json-controller/wiki) とワークフローの実行結果を確認します。
+4. [公開 Wiki](https://github.com/nxc-project/nixos-json-controller/wiki) とワークフローの実行結果を確認します。
 
 管理対象の7ページは、このディレクトリの内容が正となります。GitHub Wiki の画面から管理対象ページを直接編集しても、次回同期時に原稿の内容で上書きされる場合があります。修正は原則としてこのディレクトリに対する PR で行ってください。
 
@@ -67,5 +67,5 @@ If the Wiki clone directory already exists, update it with `git -C ../nixos-json
 ## 更新時の注意
 
 - CLI のコマンドや配布方法を変更した場合は、README とこの Wiki 原稿をあわせて見直してください。
-- GUI は開発環境で起動できる状態ですが、本番用 Nix package としての配布・更新・削除手順は整備中です。完成するまではインストール可能な機能として案内しないでください。
+- GUI は `nxc-app` の Nix Flake package として `x86_64-linux` 向けに提供されています。profile のインストール・更新・削除手順は `Installation.md` を正とし、開発環境の手順と混同しないでください。
 - 対応状況はコードと Issue を確認し、完了済み・開発中・未対応を区別して記載してください。
