@@ -8,7 +8,7 @@
 - [Installation](Installation.md)：CLI のインストール・更新・削除
 - [CLI Usage](CLI-Usage.md)：コマンドリファレンス
 - [Safety and Architecture](Safety-and-Architecture.md)：設定変更の流れと安全設計
-- [GUI Development](GUI-Development.md)：NXC Lounge GUI の開発環境
+- [GUI Development](GUI-Development.md)：NXC LOUNGE GUI の開発環境
 - [Troubleshooting](Troubleshooting.md)：よくある問題の確認方法
 - [Contributing](Contributing.md)：開発参加と Issue / PR 運用
 

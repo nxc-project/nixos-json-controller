@@ -3,7 +3,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Minus, Square, Store, X } from "lucide-react";
 
-/** Frameless-window titlebar styled to blend into the NXC Lounge UI. */
+/** Frameless-window titlebar styled to blend into the NXC LOUNGE UI. */
 export default function WindowTitleBar() {
   const appWindow = useMemo(() => (isTauri() ? getCurrentWindow() : null), []);
   // Browser previews keep the branded bar; native window controls are Tauri-only.
@@ -24,7 +24,7 @@ export default function WindowTitleBar() {
         data-tauri-drag-region
         className="select-none text-xs font-semibold tracking-tight"
       >
-        NXC Lounge
+        NXC LOUNGE
       </span>
       <span data-tauri-drag-region className="min-w-0 flex-1 self-stretch" />
 

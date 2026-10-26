@@ -1,6 +1,6 @@
 # GUI 開発ガイド
 
-NXC Lounge は Nixpkgs のパッケージを検索・管理するデスクトップ GUI で、React / TypeScript、Vite、Tailwind CSS、Tauri 2 を利用しています。現在は開発環境での起動・動作確認が中心で、本番用パッケージの配布は整備中です。
+NXC LOUNGE は Nixpkgs のパッケージを検索・管理するデスクトップ GUI で、React / TypeScript、Vite、Tailwind CSS、Tauri 2 を利用しています。現在は開発環境での起動・動作確認が中心で、本番用パッケージの配布は整備中です。
 
 ## 必要な環境
 

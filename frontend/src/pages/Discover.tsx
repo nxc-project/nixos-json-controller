@@ -727,7 +727,7 @@ function Discover() {
                 <Store className="size-5" />
               </div>
               <div>
-                <p className="font-semibold tracking-tight">NXC Lounge</p>
+                <p className="font-semibold tracking-tight">NXC LOUNGE</p>
                 <p className="text-xs text-muted-foreground">
                   NixOS向けアプリストア
                 </p>
