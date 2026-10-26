@@ -151,7 +151,7 @@ function AppDetail() {
             アプリを探す
           </Link>
           <div className="ml-4 border-l border-primary/15 pl-4 text-sm font-semibold">
-            nxc App Store
+            NXC Lounge
           </div>
         </div>
       </header>
