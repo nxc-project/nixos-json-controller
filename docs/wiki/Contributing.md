@@ -16,11 +16,11 @@ NXC は、NixOS の設定を安全に扱う CLI と、Nixpkgs のパッケージ
 
 ## 作業開始前に確認するもの
 
-- [Issue一覧](https://github.com/Ni-gihub/nixos-json-controller/issues)
-- [プロジェクト憲章 #166](https://github.com/Ni-gihub/nixos-json-controller/issues/166)
-- [PBL #167](https://github.com/Ni-gihub/nixos-json-controller/issues/167)
-- [Issue の書き方](https://github.com/Ni-gihub/nixos-json-controller/blob/main/docs/project-management/issue-writing.md)
-- [プロジェクトとバックログの運用](https://github.com/Ni-gihub/nixos-json-controller/blob/main/docs/project-management/backlog-management.md)
+- [Issue一覧](https://github.com/nxc-project/nixos-json-controller/issues)
+- [プロジェクト憲章 #166](https://github.com/nxc-project/nixos-json-controller/issues/166)
+- [PBL #167](https://github.com/nxc-project/nixos-json-controller/issues/167)
+- [Issue の書き方](https://github.com/nxc-project/nixos-json-controller/blob/main/docs/project-management/issue-writing.md)
+- [プロジェクトとバックログの運用](https://github.com/nxc-project/nixos-json-controller/blob/main/docs/project-management/backlog-management.md)
 
 既存 Issue に該当する作業がある場合は、その Issue のスコープと受け入れ条件を確認してください。内容が古い場合も、クローズ済みの履歴を理由なく再オープンせず、必要に応じて新しい Issue を作成し関連付けます。
 
@@ -68,4 +68,4 @@ PR には次の情報を含めてください。
 
 ## ドキュメント変更
 
-コマンド、配布方法、開発手順、安全性の保証範囲が変わった場合は、README と Wiki 原稿の整合性を確認してください。GUI の本番配布が完了するまでは、開発用コマンドを本番インストール手順として記載しないでください。
+コマンド、配布方法、開発手順、安全性の保証範囲が変わった場合は、README と Wiki 原稿の整合性を確認してください。GUI は `nxc-app` の Flake package として配布できるため、通常利用の profile 操作と、ソースから起動する開発用コマンドを区別して記載してください。README / Wiki に載せるインストール・更新・削除コマンドは、実際に確認した内容に限ってください。
