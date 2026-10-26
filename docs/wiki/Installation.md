@@ -68,7 +68,7 @@ GUI は CLI の `nxc` とは独立した `nxc-app` package としてインスト
 nix profile install github:nxc-project/nixos-json-controller#nxc-app
 ```
 
-インストール後はアプリランチャーの **NXC Lounge** から起動できます。ターミナルから起動する場合は `nxc-app` を実行します。
+インストール後はアプリランチャーの **NXC LOUNGE** から起動できます。ターミナルから起動する場合は `nxc-app` を実行します。
 
 ### 更新
 
