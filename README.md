@@ -7,7 +7,9 @@ CLI ではパッケージの追加・削除やサービスの有効化・無効�
 ## 現在の状態
 
 - **CLI：** Nix profile からインストールして利用できます。
-README current status
+- **GUI（NXC LOUNGE）：** React / TypeScript と Tauri 2 で実装し、Nix Flake の `nxc-app` package として `x86_64-linux` 向けに提供しています。
+- **GUI の配布：** Nix profile からのインストール・更新・削除と、アプリランチャーからの起動を実機で確認済みです。CLI の `nxc` とは独立して管理できます。
+- **開発中の GUI 機能：** インストール済みアプリの管理、インストール制約に合うパッケージの表示、スクロール時の表示問題などを Issue で管理しています。主な項目は [#102](https://github.com/nxc-project/nixos-json-controller/issues/102)、[#134](https://github.com/nxc-project/nixos-json-controller/issues/134)、[#162](https://github.com/nxc-project/nixos-json-controller/issues/162) です。
 
 現在の Flake package は x86_64-linux を対象としています。
 
