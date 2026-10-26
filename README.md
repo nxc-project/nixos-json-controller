@@ -299,7 +299,7 @@ NXC LOUNGE は CLI の `nxc` とは独立した Flake package です。対象は
 nix profile install github:nxc-project/nixos-json-controller#nxc-app
 ```
 
-インストール後、アプリランチャーの **NXC Lounge** から起動できます。ターミナルから起動する場合は次を使います。
+インストール後、アプリランチャーの **NXC LOUNGE** から起動できます。ターミナルから起動する場合は次を使います。
 
 ```sh
 nxc-app
@@ -333,7 +333,7 @@ nix profile remove nxc-app
 
 ### パッケージに含まれるもの
 
-Flake package は `nxc-app` 実行ファイル、`NXC Lounge` の Desktop Entry、静的ランチャーアイコンを提供します。AppStream データを package に組み込み、GTK / GSettings のスキーマパスを起動環境に設定するため、通常利用時に開発シェルやソース checkout は必要ありません。GUI package の build と成果物の基本検査は CI でも実行されます。
+Flake package は `nxc-app` 実行ファイル、`NXC LOUNGE` の Desktop Entry、静的ランチャーアイコンを提供します。AppStream データを package に組み込み、GTK / GSettings のスキーマパスを起動環境に設定するため、通常利用時に開発シェルやソース checkout は必要ありません。GUI package の build と成果物の基本検査は CI でも実行されます。
 
 GUI の機能改善やインストール済みアプリ管理などは引き続き開発中です。配布方法が利用可能であることと、すべての GUI 機能が完成していることは区別してください。
 
