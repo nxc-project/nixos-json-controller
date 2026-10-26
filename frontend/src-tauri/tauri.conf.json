@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "pnpm icons:generate && pnpm dev",
-    "beforeBuildCommand": "pnpm icons:generate && pnpm build"
+    "beforeDevCommand": "pnpm icons:generate && pnpm icons:check && pnpm dev",
+    "beforeBuildCommand": "pnpm build"
   },
   "app": {
     "windows": [
