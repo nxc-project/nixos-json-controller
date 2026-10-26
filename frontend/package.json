@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "tauri": "NXC_APPSTREAM_DATA=$(cd .. && nix build .#appstream-data --no-link --print-out-paths) tauri",
-    "build": "tsc -b && vite build",
+    "icons:generate": "tauri icon src-tauri/icons/nxc-app.svg --output src-tauri/icons",
+    "icons:check": "node scripts/check-tauri-icons.mjs",
+    "build": "pnpm icons:generate && pnpm icons:check && tsc -b && vite build",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "lint": "eslint .",
     "preview": "vite preview",

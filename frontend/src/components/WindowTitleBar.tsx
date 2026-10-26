@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Minus, Square, Store, X } from "lucide-react";
+import appIconUrl from "../../src-tauri/icons/nxc-app.svg?url";
+import { Minus, Square, X } from "lucide-react";
 
 /** Frameless-window titlebar styled to blend into the NXC LOUNGE UI. */
 export default function WindowTitleBar() {
@@ -16,9 +17,15 @@ export default function WindowTitleBar() {
     >
       <span
         data-tauri-drag-region
-        className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-white shadow-sm shadow-blue-500/25"
+        className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#F9EFC9] p-0.5 shadow-sm"
       >
-        <Store className="size-3.5" />
+        <img
+          src={appIconUrl}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          className="size-full object-contain"
+        />
       </span>
       <span
         data-tauri-drag-region
