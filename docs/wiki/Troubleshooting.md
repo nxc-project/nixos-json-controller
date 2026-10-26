@@ -64,12 +64,33 @@ pnpm tauri dev
 
 WebKitGTK / GTK / GSettings の環境設定が不足すると、Wayland で表示倍率が異常になることがあります。システムの通常シェルから直接起動していないか確認してください。
 
-## GUI を Nix profile からインストールできない
+## GUI を Nix profile からインストール・更新できない
 
-GUI の本番配布用 package とデスクトップ統合は、現在整備中です。開発用の `pnpm tauri dev` と、本番用アプリのインストールは別です。進捗は [Issue #101](https://github.com/Ni-gihub/nixos-json-controller/issues/101) を確認してください。
+GUI package は現在 `x86_64-linux` 向けです。まず対象の環境と Flakes が有効であることを確認し、profile の状態を調べます。
+
+```sh
+nix --version
+nix profile list
+```
+
+新規インストール：
+
+```sh
+nix profile install github:nxc-project/nixos-json-controller#nxc-app
+```
+
+更新：
+
+```sh
+nix profile upgrade nxc-app --refresh
+```
+
+profile element 名が異なる場合は、`nix profile list` に表示された名前を指定してください。インストール後はアプリランチャーの **NXC Lounge**、またはターミナルの `nxc-app` コマンドで起動できます。GUI の削除は `nix profile remove nxc-app` で行え、CLI `nxc` とは独立しています。
+
+ソースから GUI を開発起動する手順は [GUI Development](GUI-Development.md) を参照してください。
 
 ## 問題を報告する
 
 Issue を作成する際は、実行したコマンド、エラー全文、NixOS / Nix の環境情報、再現手順、期待した動作を記載してください。パスワードや個人情報などの秘密情報は貼り付けないでください。
 
-[Issue一覧を開く](https://github.com/Ni-gihub/nixos-json-controller/issues)
+[Issue一覧を開く](https://github.com/nxc-project/nixos-json-controller/issues)
