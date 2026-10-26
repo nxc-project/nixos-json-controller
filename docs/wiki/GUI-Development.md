@@ -1,6 +1,6 @@
 # GUI 開発ガイド
 
-NXC LOUNGE は Nixpkgs のパッケージを検索・管理するデスクトップ GUI で、React / TypeScript、Vite、Tailwind CSS、Tauri 2 を利用しています。現在は開発環境での起動・動作確認が中心で、本番用パッケージの配布は整備中です。
+NXC LOUNGE は Nixpkgs のパッケージを検索・管理するデスクトップ GUI で、React / TypeScript、Vite、Tailwind CSS、Tauri 2 を利用しています。Nix profile から導入できる `nxc-app` Flake package を提供しています。このページでは、GUI をソースから変更・起動するための開発環境を説明します。
 
 ## 必要な環境
 
@@ -15,7 +15,7 @@ NXC LOUNGE は Nixpkgs のパッケージを検索・管理するデスクトッ
 ## リポジトリを取得して開発シェルへ入る
 
 ```sh
-git clone https://github.com/Ni-gihub/nixos-json-controller.git
+git clone https://github.com/nxc-project/nixos-json-controller.git
 cd nixos-json-controller
 nix develop
 ```
@@ -63,14 +63,33 @@ pnpm build
 | `pnpm lint` | ESLint による静的チェック |
 | `pnpm build` | TypeScript のチェックと Vite の本番用 Frontend ビルド |
 
-Frontend のビルドに成功しても、Tauri の本番パッケージやデスクトップランチャー統合が完成したことにはなりません。
+`pnpm build` は Frontend の型チェックと Vite ビルドを確認するもので、Tauri と Nix package の全工程は検証しません。GUI package の確認には `nix build .#nxc-app --no-link --print-out-paths` を使い、CI では Desktop Entry・静的アイコン・AppStream / GSettings の wrapper 設定も検査します。
 
-## 本番配布について
+## Nix profile からの利用
 
-現時点では、次のコマンドを利用可能なインストール方法として扱わないでください。
+GUI は CLI から独立した package としてインストールできます。通常利用ではリポジトリの checkout や開発シェルは必要ありません。
+
+インストール：
 
 ```sh
-nix profile install github:Ni-gihub/nixos-json-controller#nxc-app
+nix profile install github:nxc-project/nixos-json-controller#nxc-app
 ```
 
-GUI 用 Flake package、Desktop Entry、ランチャーアイコン、本番起動時の環境設定、profile の更新・削除手順は整備中です。状況は [Issue #101](https://github.com/Ni-gihub/nixos-json-controller/issues/101)、[#169](https://github.com/Ni-gihub/nixos-json-controller/issues/169)、[#170](https://github.com/Ni-gihub/nixos-json-controller/issues/170)、[#171](https://github.com/Ni-gihub/nixos-json-controller/issues/171) を参照してください。
+インストール後はアプリランチャーの **NXC LOUNGE** から起動するか、ターミナルで `nxc-app` を実行します。
+
+更新する際は、先に profile element 名を確認します。
+
+```sh
+nix profile list
+nix profile upgrade nxc-app --refresh
+```
+
+削除する場合：
+
+```sh
+nix profile remove nxc-app
+```
+
+element 名が異なる環境では、`nix profile list` に表示された実際の名前を使用してください。GUI の更新・削除は CLI `nxc` の profile element には影響しません。
+
+package は現在 `x86_64-linux` 向けです。Flake package のビルドと Desktop Entry・静的アイコン・AppStream / GSettings の実行環境の基本検査は CI で確認しています。実機の profile 更新とランチャー起動も確認済みです。

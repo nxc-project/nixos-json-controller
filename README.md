@@ -7,9 +7,9 @@ CLI ではパッケージの追加・削除やサービスの有効化・無効�
 ## 現在の状態
 
 - **CLI：** Nix profile からインストールして利用できます。
-- **GUI（NXC LOUNGE）：** React / TypeScript と Tauri 2 で開発中です。開発環境での起動・動作確認ができます。
-- **NXC LOUNGE の本番インストール：** Nix profile からの配布、ランチャー統合、更新・削除手順は未整備です。実装は Issue [#101](https://github.com/Ni-gihub/nixos-json-controller/issues/101) で管理しています。
-- **対応中の課題：** GUI の本番配布、Tauri の本番セキュリティ設定、Nixpkgs 検索の性能・結果上限、スクロール時の表示問題などは未完了 Issue で管理しています。主な項目は [#101](https://github.com/Ni-gihub/nixos-json-controller/issues/101)、[#106](https://github.com/Ni-gihub/nixos-json-controller/issues/106)、[#123](https://github.com/Ni-gihub/nixos-json-controller/issues/123)、[#126](https://github.com/Ni-gihub/nixos-json-controller/issues/126)、[#134](https://github.com/Ni-gihub/nixos-json-controller/issues/134) です。
+- **GUI（NXC LOUNGE）：** React / TypeScript と Tauri 2 で実装し、Nix Flake の `nxc-app` package として `x86_64-linux` 向けに提供しています。
+- **GUI の配布：** Nix profile からのインストール・更新・削除と、アプリランチャーからの起動を実機で確認済みです。CLI の `nxc` とは独立して管理できます。
+- **開発中の GUI 機能：** インストール済みアプリの管理、インストール制約に合うパッケージの表示、スクロール時の表示問題などを Issue で管理しています。主な項目は [#102](https://github.com/nxc-project/nixos-json-controller/issues/102)、[#134](https://github.com/nxc-project/nixos-json-controller/issues/134)、[#162](https://github.com/nxc-project/nixos-json-controller/issues/162) です。
 
 現在の Flake package は x86_64-linux を対象としています。
 
@@ -27,7 +27,7 @@ CLI ではパッケージの追加・削除やサービスの有効化・無効�
 - 実行計画を確認する dry-run
 - Nix 評価や rebuild 後の検証、および失敗時のロールバック処理
 
-### GUI（開発中）
+### GUI（NXC LOUNGE）
 
 - Nixpkgs を利用したパッケージ検索
 - アプリの説明・バージョン・カテゴリ・タグ・ホームページなどの詳細表示
@@ -36,7 +36,7 @@ CLI ではパッケージの追加・削除やサービスの有効化・無効�
 - sudo 認証が必要な場合のパスワード入力 UI
 - AppStream やローカルのアイコンテーマを利用したアイコン解決
 
-GUI はまだ本番用の Nix package として配布できる状態ではありません。通常利用向けのプロファイルインストール手順は、Issue #101 の完了後に追加します。
+NXC LOUNGE は `nxc-app` という GUI 専用の Flake package として配布できます。インストール・更新・削除は CLI の `nxc` と独立して行えます。手順は「GUI のインストールと管理」を参照してください。
 
 ---
 
@@ -46,7 +46,7 @@ GUI はまだ本番用の Nix package として配布できる状態ではあり
 
 NixOS 上で、リポジトリの default package をインストールします。
 
-    nix profile install github:Ni-gihub/nixos-json-controller
+    nix profile install github:nxc-project/nixos-json-controller
 
 インストールできたら、コマンドを確認します。
 
@@ -79,7 +79,7 @@ profile 内の NXC の element 名を確認し、その element を削除しま�
 
 開発や調査のためにソースからビルドする場合は、Rust と Cargo が必要です。
 
-    git clone https://github.com/Ni-gihub/nixos-json-controller.git
+    git clone https://github.com/nxc-project/nixos-json-controller.git
     cd nixos-json-controller
     cargo build --release
 
@@ -230,7 +230,7 @@ NXC はユーザーの NixOS 設定を無条件に書き換えることを目的
       ↓
     結果の検証
 
-パッケージの追加・削除とサービスの有効化・無効化では、`rebuild` が有効で変更があった場合、または実行計画が再ビルドを要求する場合に再ビルド後の状態検証を行います。パッケージはアクティブなシステム上の存在状態を確認し、サービスは有効な NixOS option を `verify_service_state(...)` で確認します。再ビルド自体に失敗した場合は、変更した設定の復元を試みます。再ビルド成功後の状態検証に失敗した場合は、設定の復元と復元後の再ビルドを試みます。`rebuild` が無効な実行では再ビルド後の状態検証を行わず、検証失敗を契機とする復元処理も行いません。過去のサービス検証課題の背景は [Issue #138](https://github.com/Ni-gihub/nixos-json-controller/issues/138) に記録されています。
+パッケージの追加・削除とサービスの有効化・無効化では、`rebuild` が有効で変更があった場合、または実行計画が再ビルドを要求する場合に再ビルド後の状態検証を行います。パッケージはアクティブなシステム上の存在状態を確認し、サービスは有効な NixOS option を `verify_service_state(...)` で確認します。再ビルド自体に失敗した場合は、変更した設定の復元を試みます。再ビルド成功後の状態検証に失敗した場合は、設定の復元と復元後の再ビルドを試みます。`rebuild` が無効な実行では再ビルド後の状態検証を行わず、検証失敗を契機とする復元処理も行いません。過去のサービス検証課題の背景は [Issue #138](https://github.com/nxc-project/nixos-json-controller/issues/138) に記録されています。
 
 NixOS の宣言的な設定変更と rebuild を伴うため、変更操作では必要に応じて sudo 認証が求められます。
 
@@ -238,7 +238,7 @@ NixOS の宣言的な設定変更と rebuild を伴うため、変更操作で�
 
 # GUI の開発環境
 
-GUI は React / TypeScript、Vite、Tailwind CSS、Tauri 2 を利用しています。現在の GUI は開発環境での実行が中心です。
+GUI は React / TypeScript、Vite、Tailwind CSS、Tauri 2 を利用しています。Nix profile からインストールできる `nxc-app` package を提供しています。以下の手順はソースコードを変更する開発者向けです。
 
 Nix Flake の開発シェルを用意しています。**Wayland では WebKitGTK が正しい画面倍率を取得できるよう、GTK / GSettings のスキーマパスを設定するため、GUI の開発起動前に必ず `nix develop` を実行してください。** システムの通常のシェルから直接 `pnpm tauri dev` を実行すると、この環境設定が不足する場合があります。
 
@@ -258,7 +258,7 @@ Nix Flake の開発シェルを用意しています。**Wayland では WebKitGT
 
 リポジトリを取得し、Frontend のディレクトリで依存関係をインストールします。
 
-    git clone https://github.com/Ni-gihub/nixos-json-controller.git
+    git clone https://github.com/nxc-project/nixos-json-controller.git
     cd nixos-json-controller
     nix develop
 
@@ -287,17 +287,55 @@ frontend ディレクトリで実行します。
 - pnpm lint：ESLint による静的チェック
 - pnpm build：TypeScript のビルドチェックと Vite の本番用 Frontend ビルド
 
-これらは開発者向けコマンドです。pnpm build が成功することだけでは、Tauri の本番パッケージや Niri のランチャー統合が完成したことにはなりません。
+これらは開発者向けコマンドです。`pnpm build` は Frontend の型チェックと Vite ビルドを確認するもので、Tauri と Nix package の全工程を検証するものではありません。GUI package の確認には `nix build .#nxc-app --no-link --print-out-paths` を使い、CI では Desktop Entry・静的アイコン・AppStream / GSettings の wrapper 設定も検査します。
 
-## GUI の本番インストールについて
+## GUI のインストールと管理
 
-現時点では、次のコマンドはまだ利用できるものとして扱わないでください。
+NXC LOUNGE は CLI の `nxc` とは独立した Flake package です。対象は現在 `x86_64-linux` です。
 
-    nix profile install github:Ni-gihub/nixos-json-controller#nxc-app
+### インストール
 
-GUI 用の Flake package、Desktop Entry、静的なランチャーアイコン、本番起動時の環境設定、profile の更新・削除手順は整備中です。これらを実装して実機で検証する作業は [Issue #101](https://github.com/Ni-gihub/nixos-json-controller/issues/101) で管理しています。
+```sh
+nix profile install github:nxc-project/nixos-json-controller#nxc-app
+```
 
-本番対応が完了したら、GUI 専用パッケージとして CLI と独立してインストール・更新・削除できる形にする予定です。
+インストール後、アプリランチャーの **NXC LOUNGE** から起動できます。ターミナルから起動する場合は次を使います。
+
+```sh
+nxc-app
+```
+
+### 更新
+
+最初に profile element 名を確認します。
+
+```sh
+nix profile list
+```
+
+実機で確認した更新コマンドは次のとおりです。
+
+```sh
+nix profile upgrade nxc-app --refresh
+```
+
+profile element 名が異なる環境では、`nix profile list` に表示された名前を指定してください。
+
+### 削除
+
+GUI の profile element だけを削除します。
+
+```sh
+nix profile remove nxc-app
+```
+
+この操作は CLI の `nxc` を削除しません。削除対象の名前が異なる場合は、`nix profile list` に表示された実際の名前を指定してください。
+
+### パッケージに含まれるもの
+
+Flake package は `nxc-app` 実行ファイル、`NXC LOUNGE` の Desktop Entry、静的ランチャーアイコンを提供します。AppStream データを package に組み込み、GTK / GSettings のスキーマパスを起動環境に設定するため、通常利用時に開発シェルやソース checkout は必要ありません。GUI package の build と成果物の基本検査は CI でも実行されます。実機での profile 更新、更新後のランチャー起動、Store path の切り替えと CLI 側の Store path が変わっていないことの確認記録は [Issue #170](https://github.com/nxc-project/nixos-json-controller/issues/170) を参照してください。
+
+GUI の機能改善やインストール済みアプリ管理などは引き続き開発中です。配布方法が利用可能であることと、すべての GUI 機能が完成していることは区別してください。
 
 ---
 
@@ -326,8 +364,8 @@ GUI 用の Flake package、Desktop Entry、静的なランチャーアイコン�
 
 開発計画は次のIssueを起点に管理しています。
 
-- [プロジェクト憲章 #166](https://github.com/Ni-gihub/nixos-json-controller/issues/166)：目的・スコープ・成功基準
-- [PBL #167](https://github.com/Ni-gihub/nixos-json-controller/issues/167)：優先順位付きバックログ、依存関係、完了・見送り履歴
+- [プロジェクト憲章 #166](https://github.com/nxc-project/nixos-json-controller/issues/166)：目的・スコープ・成功基準
+- [PBL #167](https://github.com/nxc-project/nixos-json-controller/issues/167)：優先順位付きバックログ、依存関係、完了・見送り履歴
 - [Issueの書き方](docs/project-management/issue-writing.md)：PBI・Task・Bugの使い分け、Why中心の書き方、Ready / Done基準
 - [プロジェクトとバックログの運用](docs/project-management/backlog-management.md)：Issue間の関係、優先度、PBLの更新ルール
 
@@ -335,23 +373,17 @@ GUI 用の Flake package、Desktop Entry、静的なランチャーアイコン�
 
 ---
 
-# 関連 Issue（未完了の作業）
+# 関連 Issue（開発中の作業）
 
-## NXC LOUNGE（GUI）の本番配布
-- [#101 — PBI: nxc App StoreをNix profileからインストール・起動・更新・削除する](https://github.com/Ni-gihub/nixos-json-controller/issues/101)
-- [#169 — Task: GUI用Nix Flake packageを再現可能にビルドする](https://github.com/Ni-gihub/nixos-json-controller/issues/169)
-- [#170 — Task: GUI packageのデスクトップ統合と本番起動環境を整える](https://github.com/Ni-gihub/nixos-json-controller/issues/170)
-- [#171 — Task: GUI packageの利用手順とCI成果物検証を整備する](https://github.com/Ni-gihub/nixos-json-controller/issues/171)
-- [#106 — Task: 本番配布前にCSPとTauriの権限設定を監査する](https://github.com/Ni-gihub/nixos-json-controller/issues/106)
-- [#139 — Task: プロジェクト本体と同梱資産のライセンス条件を明示する](https://github.com/Ni-gihub/nixos-json-controller/issues/139)
+## GUI 機能・品質
 
-## GUI機能・品質
-- [#102 — PBI: GUIからインストール済みアプリを確認・管理する](https://github.com/Ni-gihub/nixos-json-controller/issues/102)
-- [#134 — Bug: 高速スクロール時にサイドバーの描画が重なる](https://github.com/Ni-gihub/nixos-json-controller/issues/134)
-- [#162 — PBI: インストール制約に合うパッケージをApp Storeで表示する](https://github.com/Ni-gihub/nixos-json-controller/issues/162)
-- [#172 — PBI: 詳細画面から一覧に戻った際に検索結果を再利用する](https://github.com/Ni-gihub/nixos-json-controller/issues/172)
+- [#102 — GUIからインストール済みアプリを確認・管理する](https://github.com/nxc-project/nixos-json-controller/issues/102)
+- [#134 — 高速スクロール時にサイドバーの描画が重なる](https://github.com/nxc-project/nixos-json-controller/issues/134)
+- [#162 — インストール制約に合うパッケージをApp Storeで表示する](https://github.com/nxc-project/nixos-json-controller/issues/162)
 
-完了済みの改善と対応見送りの履歴は [PBL #167](https://github.com/Ni-gihub/nixos-json-controller/issues/167) を参照してください。
+GUI package の再現可能なビルド（#169）、デスクトップ統合と本番起動環境（#170）、CSP / Tauri 権限監査（#106）、ライセンス情報（#139）は完了しています。GUI package のインストール・起動・更新・削除については上の手順を参照してください。
+
+完了済みの改善と対応見送りの履歴は [PBL #167](https://github.com/nxc-project/nixos-json-controller/issues/167) を参照してください。
 
 ---
 

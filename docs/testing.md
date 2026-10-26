@@ -15,7 +15,8 @@ NXC uses separate checks for portable Rust logic, the frontend, the Tauri wrappe
 | Frontend tests | `pnpm test` | Discovers and executes Node test files, including newly added `*.test.mjs` tests |
 | Frontend lint | `pnpm lint` | ESLint checks for configured TypeScript and TSX sources |
 | Frontend build | `pnpm build` | TypeScript project build/type-check followed by Vite production build |
-| CLI package | `nix build .#default --no-link --print-out-paths` | Builds the Flake package and validates its packaging/wrapper steps |
+| GUI package | `nix build .#nxc-app --no-link --print-out-paths` | Builds the Tauri GUI package and checks the executable, Desktop Entry, static icons, and AppStream / GSettings wrapper configuration |
+| CLI package | `nix build .#default --no-link --print-out-paths` | Builds the CLI Flake package and validates its packaging/wrapper steps |
 
 Cargo tests are executed by the dedicated Rust test job. The Flake derivation keeps `doCheck = false`, so Nix packaging validation does not silently substitute for the Cargo test job or repeat the suite in the package build.
 

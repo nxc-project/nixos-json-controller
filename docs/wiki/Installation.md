@@ -1,8 +1,6 @@
 # インストール
 
-このページでは、現在利用可能な NXC CLI のインストール方法を説明します。
-
-> **注意:** デスクトップ版 NXC LOUNGE GUI は開発環境での起動・動作確認ができる段階です。GUI の本番配布用 package、ランチャー統合、profile の更新・削除手順は整備中のため、GUI を本番用パッケージとしてインストールできるとは案内していません。進捗は [Issue #101](https://github.com/Ni-gihub/nixos-json-controller/issues/101) を参照してください。
+このページでは、CLI とデスクトップ版 NXC LOUNGE のインストール・更新・削除方法を説明します。現在の Flake package は `x86_64-linux` 向けです。
 
 ## 前提条件
 
@@ -22,7 +20,7 @@ experimental-features = nix-command flakes
 ## CLI を Nix profile からインストール
 
 ```sh
-nix profile install github:Ni-gihub/nixos-json-controller
+nix profile install github:nxc-project/nixos-json-controller
 ```
 
 インストール後、コマンドが利用できることを確認します。
@@ -60,12 +58,52 @@ nix profile remove nixos-json-controller
 
 表示された名前が異なる場合は、実際の element 名に置き換えてください。profile から NXC を削除しても、NXC が利用者の NixOS 設定に宣言されていたことにはなりません。
 
+## GUI（NXC LOUNGE）のインストール
+
+GUI は CLI の `nxc` とは独立した `nxc-app` package としてインストールできます。
+
+### インストール
+
+```sh
+nix profile install github:nxc-project/nixos-json-controller#nxc-app
+```
+
+インストール後はアプリランチャーの **NXC LOUNGE** から起動できます。ターミナルから起動する場合は `nxc-app` を実行します。
+
+### 更新
+
+profile element 名を確認します。
+
+```sh
+nix profile list
+```
+
+実機で確認した更新コマンドです。
+
+```sh
+nix profile upgrade nxc-app --refresh
+```
+
+element 名が異なる場合は、実際に表示された名前を指定してください。
+
+### 削除
+
+```sh
+nix profile remove nxc-app
+```
+
+GUI だけを削除し、CLI `nxc` はそのまま残します。削除前に `nix profile list` で対象の element 名を確認してください。
+
+### 実機での検証記録
+
+実機での GUI package の確認記録は [Issue #170](https://github.com/nxc-project/nixos-json-controller/issues/170) を参照してください。記録には、profile upgrade による Store path / revision の切り替え、更新後のアプリランチャーからの起動、CLI 側の Store path が変わっていないこと、および起動中プロセスの XDG / AppStream / GSettings 環境の確認が含まれています。Issue には install と GUI 単独削除の受け入れ条件も記録されていますが、詳細なコマンド出力は更新・起動の検証記録ほど細かくは掲載されていません。
+
 ## ソースから CLI をビルド
 
 開発・調査目的でソースからビルドする場合は、Rust / Cargo 1.85.0 以降が必要です。これは `edition = "2024"` を使うための最低バージョンです。依存関係がより新しいツールチェーンを要求する場合もあるため、Nix が利用できる場合はリポジトリの開発シェルを使う方法を推奨します。
 
 ```sh
-git clone https://github.com/Ni-gihub/nixos-json-controller.git
+git clone https://github.com/nxc-project/nixos-json-controller.git
 cd nixos-json-controller
 nix develop
 cargo build --release
