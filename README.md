@@ -333,7 +333,7 @@ nix profile remove nxc-app
 
 ### パッケージに含まれるもの
 
-Flake package は `nxc-app` 実行ファイル、`NXC LOUNGE` の Desktop Entry、静的ランチャーアイコンを提供します。AppStream データを package に組み込み、GTK / GSettings のスキーマパスを起動環境に設定するため、通常利用時に開発シェルやソース checkout は必要ありません。GUI package の build と成果物の基本検査は CI でも実行されます。
+Flake package は `nxc-app` 実行ファイル、`NXC LOUNGE` の Desktop Entry、静的ランチャーアイコンを提供します。AppStream データを package に組み込み、GTK / GSettings のスキーマパスを起動環境に設定するため、通常利用時に開発シェルやソース checkout は必要ありません。GUI package の build と成果物の基本検査は CI でも実行されます。実機での profile 更新、更新後のランチャー起動、Store path の切り替えと CLI 側の Store path が変わっていないことの確認記録は [Issue #170](https://github.com/nxc-project/nixos-json-controller/issues/170) を参照してください。
 
 GUI の機能改善やインストール済みアプリ管理などは引き続き開発中です。配布方法が利用可能であることと、すべての GUI 機能が完成していることは区別してください。
 
@@ -376,6 +376,7 @@ GUI の機能改善やインストール済みアプリ管理などは引き続�
 # 関連 Issue（開発中の作業）
 
 ## GUI 機能・品質
+
 - [#102 — GUIからインストール済みアプリを確認・管理する](https://github.com/nxc-project/nixos-json-controller/issues/102)
 - [#134 — 高速スクロール時にサイドバーの描画が重なる](https://github.com/nxc-project/nixos-json-controller/issues/134)
 - [#162 — インストール制約に合うパッケージをApp Storeで表示する](https://github.com/nxc-project/nixos-json-controller/issues/162)
