@@ -287,7 +287,7 @@ frontend ディレクトリで実行します。
 - pnpm lint：ESLint による静的チェック
 - pnpm build：TypeScript のビルドチェックと Vite の本番用 Frontend ビルド
 
-これらは開発者向けコマンドです。pnpm build が成功することだけでは、Tauri の本番パッケージや Niri のランチャー統合が完成したことにはなりません。
+これらは開発者向けコマンドです。`pnpm build` は Frontend の型チェックと Vite ビルドを確認するもので、Tauri と Nix package の全工程を検証するものではありません。GUI package の確認には `nix build .#nxc-app --no-link --print-out-paths` を使い、CI では Desktop Entry・静的アイコン・AppStream / GSettings の wrapper 設定も検査します。
 
 ## GUI のインストールと管理
 
