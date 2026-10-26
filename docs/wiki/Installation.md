@@ -94,6 +94,10 @@ nix profile remove nxc-app
 
 GUI だけを削除し、CLI `nxc` はそのまま残します。削除前に `nix profile list` で対象の element 名を確認してください。
 
+### 実機での検証記録
+
+実機での GUI package の確認記録は [Issue #170](https://github.com/nxc-project/nixos-json-controller/issues/170) を参照してください。記録には、profile upgrade による Store path / revision の切り替え、更新後のアプリランチャーからの起動、CLI 側の Store path が変わっていないこと、および起動中プロセスの XDG / AppStream / GSettings 環境の確認が含まれています。Issue には install と GUI 単独削除の受け入れ条件も記録されていますが、詳細なコマンド出力は更新・起動の検証記録ほど細かくは掲載されていません。
+
 ## ソースから CLI をビルド
 
 開発・調査目的でソースからビルドする場合は、Rust / Cargo 1.85.0 以降が必要です。これは `edition = "2024"` を使うための最低バージョンです。依存関係がより新しいツールチェーンを要求する場合もあるため、Nix が利用できる場合はリポジトリの開発シェルを使う方法を推奨します。
