@@ -75,7 +75,7 @@ GUI は CLI から独立した package としてインストールできます�
 nix profile install github:nxc-project/nixos-json-controller#nxc-app
 ```
 
-インストール後はアプリランチャーの **NXC Lounge** から起動するか、ターミナルで `nxc-app` を実行します。
+インストール後はアプリランチャーの **NXC LOUNGE** から起動するか、ターミナルで `nxc-app` を実行します。
 
 更新する際は、先に profile element 名を確認します。
 
