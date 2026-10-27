@@ -6,79 +6,140 @@ files or portions identified as third-party material below. It does not
 relicense external services, datasets, application icons, trademarks, or
 dependencies.
 
-This document records known sources and outstanding checks. It is not a
-blanket permission to redistribute third-party material. A release must be
-reviewed against the exact assets and dependency versions it includes.
+This document records the sources and checks known to this repository. It is
+not a blanket permission to redistribute third-party material and is not legal
+advice. For a release, review the notices generated for the exact package and
+the rights relevant to the included assets.
 
 ## AppStream data
 
-NXC's Flake references
+NXC pins
 [snowfallorg/nixos-appstream-data](https://github.com/snowfallorg/nixos-appstream-data)
-at the revision pinned in `flake.lock`. NXC uses its `appstream-data-all`
-output for icon and application metadata lookup. The upstream project states
-that metadata and icons follow the `metadata_license` in each metainfo record;
-the upstream repository's MIT license covers its code, not those individual
-records and icons.
+to revision `df1a03d7d838026f3c70ca18b1d8867f605ed51c` in `flake.lock`.
+The GUI package references its `appstream-data-all` output, which combines
+the free and unfree metadata outputs. The upstream README states that metadata
+and icons follow the `metadata_license` specified in each metainfo record;
+the upstream repository's MIT license applies to its code, not automatically
+to each metadata record or icon.
 
-The AppStream data is fetched/built from the Flake input rather than committed
-as an NXC source file. Individual records can have different metadata licenses.
-The presence of AppStream does not itself prevent NXC distribution; distributors
-must review the actual generated data and retain the notices/attribution that
-apply to the included records and icons.
+During the Nix GUI package build, NXC generates
+`share/licenses/nxc-app/appstream-metadata-licenses.tsv` by parsing the exact
+pinned output. The inventory records the catalog file, component ID, and
+`metadata_license` value, and marks missing declarations as `UNDECLARED`.
+This makes the license declarations inspectable; it is not a blanket approval
+to redistribute every record. Records with missing or restrictive terms and
+any required attribution still need review before release.
+
+- [Pinned upstream source](https://github.com/snowfallorg/nixos-appstream-data/tree/df1a03d7d838026f3c70ca18b1d8867f605ed51c)
+- [Upstream license explanation](https://github.com/snowfallorg/nixos-appstream-data/blob/df1a03d7d838026f3c70ca18b1d8867f605ed51c/README.md)
 
 ## Arch Linux pkgstats recommendation statistics
 
-The current source tree contains
-`frontend/public/data/recommendations.json`, which is generated from the public
-[Arch Linux pkgstats API](https://pkgstats.archlinux.de/api/doc). The workflow
-`.github/workflows/update-recommendations.yml` periodically refreshes and
-commits this snapshot. This PR intentionally does not change the dataset, the
-workflow, or the GUI's current recommendation behavior.
+`frontend/public/data/recommendations.json` is a derived snapshot made by
+`frontend/scripts/update-recommendations.mjs` from the public
+[Arch Linux pkgstats API](https://pkgstats.archlinux.de/api/doc). The
+`.github/workflows/update-recommendations.yml` workflow refreshes and commits
+that file. The JSON identifies the source, source URL, observation period, and
+the time its content was last generated. The GUI now displays and links the
+source and displays the statistics period alongside the content-generation
+date.
 
-The API documentation inspected for this change does not establish a clear
-redistribution license for the statistics payload. The server source license
-does not by itself establish the license of API response data. NXC's MIT
-license does not cover or grant additional rights to these statistics. Before
-including the snapshot in a release, confirm the applicable terms and comply
-with any conditions. If those terms cannot be established, handle the
-recommendation-data distribution design in a separate change rather than
-silently treating the data as cleared.
+The API documentation inspected for this audit describes the read-only
+statistics API and its response fields, but does not specify an explicit
+redistribution license for the statistics payload. The upstream server
+repository's source-code license does not establish the license for API
+responses. NXC's MIT license does not grant additional rights to these
+statistics. Therefore **the redistribution terms for the snapshot remain
+unconfirmed**. Source attribution and period display improve transparency but
+do not themselves establish permission to redistribute. This item needs
+confirmation from the data provider or a documented decision to use a source
+whose redistribution terms are explicit.
+
+Until that confirmation or decision is recorded, this audit does not mark the
+pkgstats snapshot as cleared for distribution. The data, scheduled update
+workflow, and recommendation feature are retained; this change does not remove
+or silently disable them.
+
+- [pkgstats API documentation](https://pkgstats.archlinux.de/api/doc)
+- [pkgstats server source repository](https://github.com/archlinux-de/pkgstats.archlinux.de)
 
 ## Runtime Iconify icons
 
-The GUI can request icon artwork at runtime from Iconify, restricted in code to
-the `logos` and `simple-icons` collections. Iconify's collection list
-identifies `logos` as CC0 and `simple-icons` as CC0 1.0. Those licenses do
-not grant trademark rights in the represented brands. NXC does not package the
-Iconify service; distributors should retain relevant source/attribution
-information and review brand-specific terms when redistributing icon artwork.
+The GUI requests icons at runtime through Iconify and restricts requests to the
+`logos` and `simple-icons` collections. The collection's declared license
+and any per-icon metadata should be checked for the particular icon used.
+Simple Icons explicitly warns that its project-wide CC0 license does not imply
+that every individual icon is CC0; per-icon license data may differ or be
+missing. Copyright licenses also do not grant trademark rights or override
+brand guidelines.
 
-- [Iconify collection license list](https://github.com/iconify/icon-sets/blob/master/collections.md)
-- [Simple Icons disclaimer](https://github.com/simple-icons/simple-icons/blob/develop/DISCLAIMER.md)
+The application does not copy these runtime SVG responses into the Nix package.
+They are fetched from the external service while the app is running, so this
+notice documents the runtime source rather than claiming that every icon is
+cleared for redistribution.
+
+- [Iconify icon-set license index](https://github.com/iconify/icon-sets/blob/master/collections.md)
+- [Simple Icons license](https://github.com/simple-icons/simple-icons/blob/develop/LICENSE.md)
+- [Simple Icons disclaimer and per-icon guidance](https://github.com/simple-icons/simple-icons/blob/develop/DISCLAIMER.md)
 
 ## Geist Variable font
 
-The GUI imports `@fontsource-variable/geist`. The Geist font software is
-licensed under the SIL Open Font License 1.1. The corresponding license text
-is copied to `frontend/public/licenses/OFL-1.1.txt` so it is included in the
-Vite output and can accompany a GUI distribution.
+The GUI imports `@fontsource-variable/geist`, whose font software uses the
+SIL Open Font License 1.1. The OFL text is included at
+`frontend/public/licenses/OFL-1.1.txt` and is copied into the GUI package at
+`share/licenses/nxc-app/OFL-1.1.txt`.
 
-- [Geist font source and license](https://github.com/google/fonts/tree/main/ofl/geist)
+- [Geist upstream license](https://github.com/vercel/geist-font/blob/main/LICENSE.txt)
 - [SIL Open Font License 1.1](https://openfontlicense.org)
 
-## Other direct assets and package dependencies
+## NXC LOUNGE application icon and remaining source assets
 
-- `frontend/src-tauri/icons/`, `frontend/public/favicon.svg`,
-  `frontend/public/icons.svg`, `frontend/src/assets/hero.png`,
-  `frontend/src/assets/react.svg`, and `frontend/src/assets/vite.svg` contain
-  binary or SVG assets whose original author/license could not be established
-  from the repository metadata during this review. Their provenance must be
-  recorded before describing them as confirmed MIT-licensed material.
-- Cargo and pnpm dependencies retain their own licenses. Their licenses are
-  not changed by NXC's MIT license. Before producing a release, generate a
-  dependency-license report from the exact lockfiles and include the license
-  texts/notices required for the dependencies actually shipped in the bundle.
+- `frontend/src-tauri/icons/nxc-app.svg` is the source used by
+  `pnpm icons:generate` to create the PNG, ICO, and ICNS application-icon
+  variants. The repository history records that the SVG was added by the
+  project maintainer, but the repository does not independently establish its
+  original artwork source or an express license declaration. Confirming that
+  the maintainer has the necessary rights remains a release check; this
+  document does not automatically apply NXC's MIT license to the artwork.
+- `frontend/src/assets/hero.png`, `react.svg`, and `vite.svg` are legacy
+  source-tree assets with no imports/references found in the current frontend
+  source. Because they are not imported into the Vite build, they are not
+  expected in the GUI package output. Their original source/license is not
+  established by the repository history, so do not treat them as MIT-licensed
+  third-party art.
+- `frontend/public/icons.svg` was an unreferenced public SVG sprite. No use of
+  its symbol IDs was found in the current frontend source, so it is removed
+  from the package source rather than copied into the public build output.
+- `frontend/public/favicon.svg` is not present in the current repository; it
+  is not an asset in the audited source or distribution.
 
-The pkgstats data terms, several direct assets, and the exact notices required
-for release dependencies remain release-review items. This document does not
-mark them as cleared.
+## Dependency license reports included with the GUI package
+
+The Nix GUI package installs its legal notices and generated inventories under
+`share/licenses/nxc-app/`:
+
+- `LICENSE` — NXC's own MIT license text.
+- `THIRD_PARTY_NOTICES.md` — this source/rights inventory.
+- `OFL-1.1.txt` — the font license text.
+- `frontend-licenses.md` — generated during the Vite production build from
+  the packages represented in emitted JavaScript chunks and direct CSS imports.
+  It includes the package's declared license, any top-level license text files
+  found, and explicit `UNDECLARED` / `NONE FOUND` indicators where metadata
+  or texts are missing.
+- `rust-dependency-licenses.html` — generated by cargo-about from the
+  `frontend/src-tauri/Cargo.lock` dependency graph for the GUI's Linux target.
+- `appstream-metadata-licenses.tsv` — generated from the exact pinned
+  AppStream output as described above.
+
+The generated reports are inventories, not legal opinions. A missing license
+field/text, a surprising license expression, an AppStream record with
+`UNDECLARED`, or a missing notice is a release-review item. The Rust report
+uses the lockfile and an offline license scan; it does not rely on a remote
+license database. The JavaScript report is derived from the actual Vite bundle
+and direct stylesheet imports, so dependency changes update the inventory on
+the next build.
+
+The pkgstats response-data terms and the original artwork rights for the
+NXC LOUNGE icon remain unresolved external/maintainer confirmations. Do not
+mark this Issue complete until those points are resolved or an explicit,
+documented release decision is made.
