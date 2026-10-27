@@ -158,7 +158,7 @@ export default function DiscoverPreSearch({
           )}
           {generatedAt && (
             <p>
-              データ更新日 {new Date(generatedAt).toLocaleDateString("ja-JP")}
+              内容の最終更新日 {new Date(generatedAt).toLocaleDateString("ja-JP")}
             </p>
           )}
           {loading && <p className="mt-1">インストール状態を確認中...</p>}
