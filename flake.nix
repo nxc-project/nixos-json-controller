@@ -116,9 +116,19 @@
             install -Dm644 ${./LICENSE} "$out/share/licenses/nxc-app/LICENSE"
             install -Dm644 ${./THIRD_PARTY_NOTICES.md} "$out/share/licenses/nxc-app/THIRD_PARTY_NOTICES.md"
             install -Dm644 ${./frontend/public/licenses/OFL-1.1.txt} "$out/share/licenses/nxc-app/OFL-1.1.txt"
-            test -s "$sourceRoot/frontend/dist/THIRD_PARTY_LICENSES.md"
-            install -Dm644 "$sourceRoot/frontend/dist/THIRD_PARTY_LICENSES.md" "$out/share/licenses/nxc-app/frontend-licenses.md"
-            (cd ${./frontend/src-tauri} && cargo about generate about.hbs > "$out/share/licenses/nxc-app/rust-dependency-licenses.html")
+            # Resolve sourceRoot from the build directory; the postInstall cwd is already inside sourceRoot.
+            build_source_root="$sourceRoot"
+            if [[ "$build_source_root" != /* ]]; then
+              build_source_root="$NIX_BUILD_TOP/$build_source_root"
+            fi
+            frontend_license_report="$build_source_root/frontend/dist/THIRD_PARTY_LICENSES.md"
+            test -s "$frontend_license_report"
+            if grep -Fq "Treat this as a release-review blocker." "$frontend_license_report"; then
+              echo "Frontend dependency license inventory found no license texts; refusing to package an incomplete report." >&2
+              exit 1
+            fi
+            install -Dm644 "$frontend_license_report" "$out/share/licenses/nxc-app/frontend-licenses.md"
+            (cd "$build_source_root/frontend/src-tauri" && cargo about generate --offline --locked about.hbs > "$out/share/licenses/nxc-app/rust-dependency-licenses.html")
             python3 ${./scripts/generate-appstream-license-report.py} ${appstreamData} "$out/share/licenses/nxc-app/appstream-metadata-licenses.tsv"
             test -s "$out/share/licenses/nxc-app/frontend-licenses.md"
             test -s "$out/share/licenses/nxc-app/rust-dependency-licenses.html"
