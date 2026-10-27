@@ -63,6 +63,8 @@ or silently disable them.
 - [pkgstats API documentation](https://pkgstats.archlinux.de/api/doc)
 - [pkgstats server source repository](https://github.com/archlinux-de/pkgstats.archlinux.de)
 
+A separate investigation documents comparable projects and a possible Release-artifact approach in [docs/third-party-data-distribution.md](./docs/third-party-data-distribution.md). In particular, `nix-index-database` demonstrates how generated databases can be published as GitHub Release assets and pinned by URL/hash in Nix. This is a distribution/versioning precedent only: it does not establish a license for NXC's pkgstats-derived data, and moving the JSON to a Release would not itself resolve the outstanding redistribution question.
+
 ## Runtime Iconify icons
 
 The GUI requests icons at runtime through Iconify and restricts requests to the
