@@ -11,7 +11,8 @@ const MAX_CATALOG_QUERY_BYTES: usize = 512;
 const MAX_CATALOG_ID_BYTES: usize = 256;
 const MAX_CATALOG_ID_BATCH: usize = 50;
 const MAX_PACKAGE_STATE_BATCH: usize = 100;
-const LATEST_RECOMMENDATIONS_URL: &str = "https://github.com/nxc-project/nixos-json-controller/releases/download/recommendations-latest/recommendations.json";
+const LATEST_RECOMMENDATIONS_URL: &str =
+    "https://github.com/nxc-project/nixos-json-controller/releases/download/recommendations-latest/recommendations.json";
 const MAX_RECOMMENDATION_DOCUMENT_BYTES: usize = 512 * 1024;
 
 #[derive(Debug, Serialize)]
