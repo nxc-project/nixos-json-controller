@@ -137,8 +137,10 @@ export default function DiscoverPreSearch({
           </p>
         </div>
         <div className="shrink-0 text-xs leading-5 text-foreground/60">
-          {source && sourceUrl && /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(sourceUrl) && (
-            <p>
+          {source &&
+            sourceUrl &&
+            /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(sourceUrl) && (
+              <p>
               統計元{" "}
               <a
                 className="underline underline-offset-2 hover:text-foreground"
@@ -148,8 +150,8 @@ export default function DiscoverPreSearch({
               >
                 {source}
               </a>
-            </p>
-          )}
+              </p>
+            )}
           {period && (
             <p>
               統計期間 {formatRecommendationMonth(period.startMonth)}〜
