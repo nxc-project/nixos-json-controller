@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import appLogo from "../../src-tauri/icons/nxc-app.svg";
 import {
   BookOpen,
   Briefcase,
@@ -724,7 +725,7 @@ function Discover() {
             <div className="flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm">
                 <img
-                  src="../../src-tauri/icons/nxc-app.svg"
+                  src={appLogo}
                   alt=""
                   aria-hidden="true"
                   className="size-full object-contain"
