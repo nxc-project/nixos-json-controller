@@ -1,14 +1,12 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync, statSync, type Dirent } from 'node:fs'
 import path from 'node:path'
-import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, type Plugin } from 'vite'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const require = createRequire(import.meta.url)
 const licenseFileName = /^(license|licence|copying|notice|unlicense)([._ -].*)?$/i
 
 type PackageLicense = {
@@ -48,12 +46,33 @@ function packageRootForModule(moduleId: string): string | undefined {
   return undefined
 }
 
-function packageRootForImport(specifier: string): string | undefined {
-  try {
-    return packageRootForModule(require.resolve(specifier, { paths: [__dirname] }))
-  } catch {
-    return undefined
+function packageRootForImport(specifier: string): string {
+  const subpath = specifier.split('?')[0]
+  const packageName = subpath.startsWith('@')
+    ? subpath.split('/').slice(0, 2).join('/')
+    : subpath.split('/')[0]
+  if (!packageName || packageName === '.' || packageName.startsWith('/')) {
+    throw new Error(`Cannot determine package name for CSS import: ${specifier}`)
   }
+
+  const packageSegments = packageName.split('/')
+  let directory = __dirname
+  while (true) {
+    // Resolve package.json directly instead of require.resolve(): some CSS-only
+    // packages export a "style" condition but intentionally block the "require"
+    // condition, so require.resolve would silently miss their license metadata.
+    const packageRoot = path.join(directory, 'node_modules', ...packageSegments)
+    const metadata = readJsonFile(path.join(packageRoot, 'package.json'))
+    if (metadata?.name === packageName) return packageRoot
+
+    const parent = path.dirname(directory)
+    if (parent === directory) break
+    directory = parent
+  }
+
+  throw new Error(
+    `Could not resolve package root for CSS import "${specifier}" (package "${packageName}")`,
+  )
 }
 
 function collectLicenseFiles(packageRoot: string): PackageLicense['files'] {
