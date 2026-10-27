@@ -138,6 +138,8 @@ and direct stylesheet imports, so dependency changes update the inventory on
 the next build.
 
 The pkgstats response-data terms and the original artwork rights for the
-NXC LOUNGE icon remain unresolved external/maintainer confirmations. Do not
-mark this Issue complete until those points are resolved or an explicit,
-documented release decision is made.
+NXC LOUNGE icon remain unresolved release checks requiring provider or
+maintainer confirmation. Track those checks separately from the completed
+scope of this audit task. Do not treat closure of the audit task as release
+clearance; the GUI release should remain blocked until these points are
+resolved or an explicit, documented release decision is made.
