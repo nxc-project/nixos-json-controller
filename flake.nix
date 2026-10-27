@@ -85,6 +85,8 @@
             pnpmConfigHook
             makeWrapper
             wrapGAppsHook4
+            cargo-about
+            python3
           ];
 
           buildInputs = with pkgs; [
@@ -106,6 +108,20 @@
           # a stable command name and an explicit desktop entry with the scalable SVG icon.
           postInstall = ''
             mv "$out/bin/app" "$out/bin/nxc-app"
+
+            # Ship the project license and notices alongside reports generated
+            # from the exact frontend bundle, Rust lockfile, and pinned AppStream output.
+            mkdir -p "$out/share/licenses/nxc-app"
+            install -Dm644 ${./LICENSE} "$out/share/licenses/nxc-app/LICENSE"
+            install -Dm644 ${./THIRD_PARTY_NOTICES.md} "$out/share/licenses/nxc-app/THIRD_PARTY_NOTICES.md"
+            install -Dm644 ${./frontend/public/licenses/OFL-1.1.txt} "$out/share/licenses/nxc-app/OFL-1.1.txt"
+            test -s "$sourceRoot/frontend/dist/THIRD_PARTY_LICENSES.md"
+            install -Dm644 "$sourceRoot/frontend/dist/THIRD_PARTY_LICENSES.md" "$out/share/licenses/nxc-app/frontend-licenses.md"
+            (cd ${./frontend/src-tauri} && cargo about generate about.hbs > "$out/share/licenses/nxc-app/rust-dependency-licenses.html")
+            python3 ${./scripts/generate-appstream-license-report.py} ${appstreamData} "$out/share/licenses/nxc-app/appstream-metadata-licenses.tsv"
+            test -s "$out/share/licenses/nxc-app/frontend-licenses.md"
+            test -s "$out/share/licenses/nxc-app/rust-dependency-licenses.html"
+            test -s "$out/share/licenses/nxc-app/appstream-metadata-licenses.tsv"
 
             mkdir -p "$out/share/applications"
             rm -f "$out/share/applications/"*.desktop
