@@ -22,7 +22,7 @@ type DiscoverPreSearchProps = {
 
 /** Only link the known pkgstats API host from the recommendation metadata. */
 function isPkgstatsSourceUrl(sourceUrl: string): boolean {
-  return /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(sourceUrl)
+  return /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(sourceUrl);
 }
 
 /** Format pkgstats' YYYYMM month value for user-facing attribution. */
