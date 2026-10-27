@@ -82,6 +82,9 @@ jobs:
           tag="recommendations-$(date -u +'%Y%m%dT%H%M%SZ')-$GITHUB_RUN_ID"
           generated_at="$(node -e 'const d = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(d.generatedAt ?? "unknown")' "$DATA_FILE")"
           period="$(node -e 'const d = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(d.period ? `${d.period.startMonth}-${d.period.endMonth}` : "unknown")' "$DATA_FILE")"
+          checksum="$(sha256sum "$DATA_FILE" | cut -d ' ' -f 1)"
+          checksum_file="$RUNNER_TEMP/recommendations.json.sha256"
+          printf '%s  recommendations.json\n' "$checksum" > "$checksum_file"
           notes="$RUNNER_TEMP/nxc-recommendation-release-notes.md"
 
           cat > "$notes" <<EOF
@@ -91,12 +94,13 @@ jobs:
           - Statistics period: $period
           - Generated at: $generated_at
           - Artifact: recommendations.json
+          - SHA-256: $checksum
 
           The upstream API documentation reviewed by this project did not specify an explicit redistribution license for the statistics payload. Publishing this artifact does not establish or grant rights to the upstream data. See THIRD_PARTY_NOTICES.md in the source repository for the current review status.
           EOF
 
           # Keep a versioned snapshot for inspection and rollback.
-          gh release create "$tag" "$DATA_FILE" \
+          gh release create "$tag" "$DATA_FILE" "$checksum_file" \
             --repo "$GITHUB_REPOSITORY" \
             --title "NXC recommendation dataset $tag" \
             --notes-file "$notes" \
@@ -105,7 +109,7 @@ jobs:
           # This stable asset URL is the one used by the desktop app. It is
           # updated only when the generated dataset changes.
           if gh release view recommendations-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload recommendations-latest "$DATA_FILE" \
+            gh release upload recommendations-latest "$DATA_FILE" "$checksum_file" \
               --repo "$GITHUB_REPOSITORY" \
               --clobber
             gh release edit recommendations-latest \
@@ -113,7 +117,7 @@ jobs:
               --title "NXC recommendation dataset (rolling latest)" \
               --notes-file "$notes"
           else
-            gh release create recommendations-latest "$DATA_FILE" \
+            gh release create recommendations-latest "$DATA_FILE" "$checksum_file" \
               --repo "$GITHUB_REPOSITORY" \
               --title "NXC recommendation dataset (rolling latest)" \
               --notes-file "$notes" \
