@@ -100,7 +100,17 @@ Nix package から Release 成果物を取り込む場合は、特定のバー�
 This notice documents the source and the current state of the license review. It does not grant a license to upstream data or establish redistribution permission.
 ```
 
-実際に取得日や期間を JSON に記録している場合は、手動で同じ情報を二重管理するより、生成スクリプトから Release の README と GUI の表示用メタデータを生成する方が、記録のずれを防ぎやすい。
+この PR では Release 成果物への移行も実装する。
+
+- `.github/workflows/update-recommendations.yml` は最新の `recommendations-latest` アセットを前回値として取得し、一時ディレクトリで次の JSON を生成する。
+- データ内容が変わった場合だけ、内容を固定した `recommendations-<timestamp>-<run-id>` Release を作成し、その後 rolling alias の `recommendations-latest` アセットを更新する。
+- `frontend/public/data/recommendations.json` は、アプリの初期表示・オフライン用の同梱 fallback として残す。定期更新はこのファイルを Git に commit しない。
+- GUI は Tauri backend の固定 URL ダウンロード command を使う。GitHub Release asset のブラウザ fetch は CORS で失敗しうるため、WebView の直接 fetch にはしない。
+- 更新がない週は新しい Release を作らない。生成失敗時は既存の Release asset を置き換えない。
+
+生成スクリプトは `NXC_RECOMMENDATIONS_OUTPUT` で出力先を指定でき、通常のローカル実行では従来どおり public の fallback JSON を出力する。
+
+この変更は配布方式を変えるもので、データの権利関係を解決するものではない。pkgstats の再配布条件は引き続き未確認として記録し、Release 説明にもその旨を表示する。
 
 ## この調査時点の判断
 
