@@ -137,7 +137,7 @@ export default function DiscoverPreSearch({
           </p>
         </div>
         <div className="shrink-0 text-xs leading-5 text-foreground/60">
-          {source && sourceUrl && /^https:\/\//i.test(sourceUrl) && (
+          {source && sourceUrl && /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(sourceUrl) && (
             <p>
               統計元{" "}
               <a
