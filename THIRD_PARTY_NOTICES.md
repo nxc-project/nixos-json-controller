@@ -89,7 +89,8 @@ SIL Open Font License 1.1. The OFL text is included at
 `frontend/public/licenses/OFL-1.1.txt` and is copied into the GUI package at
 `share/licenses/nxc-app/OFL-1.1.txt`.
 
-- [Geist upstream license](https://github.com/vercel/geist-font/blob/main/LICENSE.txt)
+- [Pinned @fontsource-variable/geist 5.3.0 package and license metadata](https://www.npmjs.com/package/%40fontsource-variable/geist/v/5.3.0)
+- [Geist upstream source and license](https://github.com/vercel/geist-font/blob/main/LICENSE.txt)
 - [SIL Open Font License 1.1](https://openfontlicense.org)
 
 ## NXC LOUNGE application icon and remaining source assets
