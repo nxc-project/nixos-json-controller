@@ -94,11 +94,22 @@ test("returns an empty safe value when the bundled resource is unavailable", asy
   assert.equal(data.recommendations.length, 0);
 });
 
-test("does not replace existing data with an empty remote list", async () => {
+test("loads valid data returned by the native Release loader", async () => {
+  const data = await loadLatestRecommendations(async () => validData);
+  assert.equal(data?.recommendations[0]?.id, "firefox");
+  assert.equal(data?.source, "Arch Linux pkgstats");
+});
+
+test("does not replace existing data with an empty Release list", async () => {
   const emptyData = { ...validData, recommendations: [] };
-  const data = await loadLatestRecommendations(async () =>
-    mockResponse(emptyData),
-  );
+  const data = await loadLatestRecommendations(async () => emptyData);
+  assert.equal(data, undefined);
+});
+
+test("treats native Release download failures as unavailable data", async () => {
+  const data = await loadLatestRecommendations(async () => {
+    throw new Error("download failed");
+  });
   assert.equal(data, undefined);
 });
 

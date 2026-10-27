@@ -333,7 +333,7 @@ nix profile remove nxc-app
 
 ### パッケージに含まれるもの
 
-Flake package は `nxc-app` 実行ファイル、`NXC LOUNGE` の Desktop Entry、静的ランチャーアイコンを提供します。AppStream データを package に組み込み、GTK / GSettings のスキーマパスを起動環境に設定するため、通常利用時に開発シェルやソース checkout は必要ありません。GUI package の build と成果物の基本検査は CI でも実行されます。実機での profile 更新、更新後のランチャー起動、Store path の切り替えと CLI 側の Store path が変わっていないことの確認記録は [Issue #170](https://github.com/nxc-project/nixos-json-controller/issues/170) を参照してください。
+Flake package は `nxc-app` 実行ファイル、`NXC LOUNGE` の Desktop Entry、静的ランチャーアイコンを提供します。AppStream データを package に組み込み、GTK / GSettings のスキーマパスを起動環境に設定するため、通常利用時に開発シェルやソース checkout は必要ありません。 おすすめデータは GitHub Releases から定期更新し、取得できない場合は同梱の fallback データを利用します。GUI package の build と成果物の基本検査は CI でも実行されます。実機での profile 更新、更新後のランチャー起動、Store path の切り替えと CLI 側の Store path が変わっていないことの確認記録は [Issue #170](https://github.com/nxc-project/nixos-json-controller/issues/170) を参照してください。
 
 GUI の機能改善やインストール済みアプリ管理などは引き続き開発中です。配布方法が利用可能であることと、すべての GUI 機能が完成していることは区別してください。
 
@@ -393,4 +393,4 @@ NXC が作成した CLI / コア機能、GUI のソースコード、Nix 定義�
 
 このライセンスは、外部 API サービス、API から得られるデータ、AppStream の個別メタデータやアイコン、Iconify のアイコン、フォント、依存ライブラリ、商標などに一律適用されません。NXC のソースコードに含まれる外部サービス呼び出しのコードと、外部サービスやそのデータ自体は区別してください。
 
-第三者資産の出典・ライセンスの確認方法と、配布者が生成するデータの扱いは [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) にまとめています。外部資産や依存ライブラリを含む GUI 配布物を作成する場合は、個別の条件と必要なライセンス文・帰属表示を確認してください。
+第三者資産の出典・ライセンスの確認方法は [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) にまとめています。GUI package には、本体の `LICENSE`、第三者資産の説明、フォントライセンス、Vite のバンドル依存ライセンス一覧、Cargo の依存ライセンスレポート、実際に同梱する AppStream データの `metadata_license` 一覧を `share/licenses/nxc-app/` に同梱します。これらのレポートは確認を助けるインベントリであり、再配布条件が未確定の外部データや画像の利用許可を自動的に保証するものではありません。

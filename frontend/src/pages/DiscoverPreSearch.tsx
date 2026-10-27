@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { RecommendationPeriod } from "@/catalog/recommendation-data";
 
 export type RecommendationStatus =
   "loading" | "ready" | "partial" | "fallback" | "unavailable";
@@ -9,6 +10,9 @@ type DiscoverPreSearchProps = {
   query: string;
   hasRecommendations: boolean;
   generatedAt: string | null;
+  source: string | null;
+  sourceUrl: string | null;
+  period: RecommendationPeriod | null;
   loading: boolean;
   recommendationStatus: RecommendationStatus;
   recommendationMessage: string | null;
@@ -16,11 +20,24 @@ type DiscoverPreSearchProps = {
   children: ReactNode;
 };
 
+/** Only link the known pkgstats API host from the recommendation metadata. */
+function isPkgstatsSourceUrl(sourceUrl: string): boolean {
+  return /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(sourceUrl);
+}
+
+/** Format pkgstats' YYYYMM month value for user-facing attribution. */
+function formatRecommendationMonth(value: number): string {
+  return `${Math.floor(value / 100)}年${value % 100}月`;
+}
+
 /** Render the Discover page's pre-search guidance, loading state, or recommendations. */
 export default function DiscoverPreSearch({
   query,
   hasRecommendations,
   generatedAt,
+  source,
+  sourceUrl,
+  period,
   loading,
   recommendationStatus,
   recommendationMessage,
@@ -125,9 +142,29 @@ export default function DiscoverPreSearch({
           </p>
         </div>
         <div className="shrink-0 text-xs leading-5 text-foreground/60">
+          {source && sourceUrl && isPkgstatsSourceUrl(sourceUrl) && (
+            <p>
+              統計元{" "}
+              <a
+                className="underline underline-offset-2 hover:text-foreground"
+                href={sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {source}
+              </a>
+            </p>
+          )}
+          {period && (
+            <p>
+              統計期間 {formatRecommendationMonth(period.startMonth)}〜
+              {formatRecommendationMonth(period.endMonth)}
+            </p>
+          )}
           {generatedAt && (
             <p>
-              データ更新日 {new Date(generatedAt).toLocaleDateString("ja-JP")}
+              内容の最終更新日{" "}
+              {new Date(generatedAt).toLocaleDateString("ja-JP")}
             </p>
           )}
           {loading && <p className="mt-1">インストール状態を確認中...</p>}

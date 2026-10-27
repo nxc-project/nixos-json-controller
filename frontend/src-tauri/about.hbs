@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NXC LOUNGE — Rust dependency licenses</title>
+  <style>
+    body { font-family: sans-serif; line-height: 1.5; max-width: 72rem; margin: 2rem auto; padding: 0 1rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #bbb; padding: .5rem; text-align: left; vertical-align: top; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 1rem; background: #f5f5f5; }
+  </style>
+</head>
+<body>
+  <h1>NXC LOUNGE — Rust dependency licenses</h1>
+  <p>This inventory is generated from the locked Rust dependency graph used to build NXC LOUNGE. It reproduces license information and texts found by cargo-about; it is not legal advice or a determination that all third-party rights have been cleared.</p>
+
+  <h2>License overview</h2>
+  <ul>
+    {{#each overview}}
+    <li><a href="#{{id}}">{{name}}</a> ({{count}})</li>
+    {{/each}}
+  </ul>
+
+  <h2>Dependency license texts</h2>
+  {{#each licenses}}
+    {{#if first_of_kind}}
+      <h3 id="{{id}}">{{name}}</h3>
+    {{/if}}
+    <h4>{{name}}</h4>
+    <p>Used by:</p>
+    <ul>
+      {{#each used_by}}
+      <li><a href="{{#if crate.repository}}{{crate.repository}}{{else}}https://crates.io/crates/{{crate.name}}{{/if}}">{{crate.name}} {{crate.version}}</a></li>
+      {{/each}}
+    </ul>
+    <pre>{{text}}</pre>
+  {{/each}}
+</body>
+</html>

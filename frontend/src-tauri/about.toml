@@ -1,0 +1,32 @@
+# License inventory for the Linux GUI package. This is not a legal approval policy.
+# We retain all declared license texts for review rather than claiming that a crate's
+# presence in this report alone clears distribution rights.
+accepted = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "MIT",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+  "Zlib",
+  "CC0-1.0",
+  "CDLA-Permissive-2.0",
+  "OpenSSL",
+  "MPL-2.0",
+]
+
+targets = ["x86_64-unknown-linux-gnu"]
+ignore-build-dependencies = false
+ignore-dev-dependencies = false
+ignore-transitive-dependencies = false
+no-clearly-defined = true
+
+workarounds = ["ring"]
+
+[ring]
+accepted = ["OpenSSL"]
+
+[unicode-ident]
+accepted = ["Unicode-DFS-2016"]

@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const frontendDirectory = path.resolve(scriptDirectory, "..");
 const mapPath = path.join(scriptDirectory, "recommendation-package-map.json");
-const outputPath = path.join(frontendDirectory, "public", "data", "recommendations.json");
+const outputPath = process.env.NXC_RECOMMENDATIONS_OUTPUT
+  ? path.resolve(process.env.NXC_RECOMMENDATIONS_OUTPUT)
+  : path.join(frontendDirectory, "public", "data", "recommendations.json");
 const apiUrl = "https://pkgstats.archlinux.de/api/packages";
 const sourceUrl = "https://pkgstats.archlinux.de/api/doc";
 const pageSize = 10_000;
@@ -233,6 +235,7 @@ export function hasSameRecommendationContent(existing, next) {
 
 /** Generate a new JSON file only after statistics and candidate validation succeed. */
 async function main() {
+  await mkdir(path.dirname(outputPath), { recursive: true });
   const packageMap = JSON.parse(await readFile(mapPath, "utf8"));
   if (!Array.isArray(packageMap) || packageMap.length === 0) {
     throw new Error("recommendation package map must be a non-empty array");
