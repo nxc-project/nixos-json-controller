@@ -93,7 +93,7 @@ jobs:
           The upstream API documentation reviewed by this project did not specify an explicit redistribution license for the statistics payload. Publishing this artifact does not establish or grant rights to the upstream data. See THIRD_PARTY_NOTICES.md in the source repository for the current review status.
           EOF
 
-          # Keep an immutable, versioned snapshot for inspection and rollback.
+          # Keep a versioned snapshot for inspection and rollback.
           gh release create "$tag" "$DATA_FILE" \
             --repo "$GITHUB_REPOSITORY" \
             --title "NXC recommendation dataset $tag" \
