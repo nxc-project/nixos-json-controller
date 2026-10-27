@@ -45,13 +45,20 @@ jobs:
           mkdir -p "$data_dir"
 
           if gh release view recommendations-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            # Use the last published dataset as the comparison baseline. Do not
-            # overwrite the checked-in offline fallback used by packaged builds.
-            gh release download recommendations-latest \
+            # Use the rolling Release as the comparison baseline when its JSON is available.
+            if gh release download recommendations-latest \
               --repo "$GITHUB_REPOSITORY" \
               --pattern recommendations.json \
-              --dir "$data_dir"
-            echo "has_release=true" >> "$GITHUB_OUTPUT"
+              --dir "$data_dir"; then
+              echo "has_release=true" >> "$GITHUB_OUTPUT"
+            else
+              # A Release can exist while its asset is missing (for example, if
+              # an upload was interrupted). Recover from the bundled fallback.
+              echo "Rolling Release asset unavailable; recovering from bundled fallback." >&2
+              rm -f "$data_file"
+              cp frontend/public/data/recommendations.json "$data_file"
+              echo "has_release=false" >> "$GITHUB_OUTPUT"
+            fi
           else
             cp frontend/public/data/recommendations.json "$data_file"
             echo "has_release=false" >> "$GITHUB_OUTPUT"
@@ -73,6 +80,8 @@ jobs:
           echo "current_hash=$current_hash" >> "$GITHUB_OUTPUT"
 
       - name: Publish a versioned snapshot and update the rolling Release asset
+        # Publish the initial snapshot even when it matches the bundled fallback;
+        # afterward, create new snapshots only when the data changes.
         if: steps.prepare.outputs.has_release != 'true' || steps.prepare.outputs.previous_hash != steps.generate.outputs.current_hash
         shell: bash
         env:
@@ -104,6 +113,7 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "NXC recommendation dataset $tag" \
             --notes-file "$notes" \
+            --target "$GITHUB_SHA" \
             --latest=false
 
           # This stable asset URL is the one used by the desktop app. It is
@@ -121,6 +131,7 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --title "NXC recommendation dataset (rolling latest)" \
               --notes-file "$notes" \
+              --target "$GITHUB_SHA" \
               --prerelease
           fi
 
