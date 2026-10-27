@@ -834,6 +834,9 @@ function Discover() {
                   query={query}
                   hasRecommendations={recommendedApps.length > 0}
                   generatedAt={recommendationData?.generatedAt ?? null}
+                  source={recommendationData?.source ?? null}
+                  sourceUrl={recommendationData?.sourceUrl ?? null}
+                  period={recommendationData?.period ?? null}
                   loading={loading}
                   recommendationStatus={recommendationStatus}
                   recommendationMessage={recommendationMessage}
