@@ -12,18 +12,19 @@ on:
       - "frontend/scripts/update-recommendations.mjs"
       - "frontend/scripts/recommendation-package-map.json"
 
-# Serialize scheduled, manual, and push-triggered updates to avoid conflicting git pushes.
+# Serialize updates so a manual run cannot race with the scheduled publication.
 concurrency:
   group: update-recommendations
   cancel-in-progress: false
 
 jobs:
   update-recommendations:
-    # This job must commit refreshed recommendation data to the repository.
     permissions:
       contents: write
-    name: Refresh Arch pkgstats recommendations
+    name: Publish Arch pkgstats recommendation data
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Check out repository
@@ -34,19 +35,89 @@ jobs:
         with:
           node-version: 24
 
-      - name: Generate recommendation data
-        run: node frontend/scripts/update-recommendations.mjs
-
-      - name: Commit updated data when it changed
+      - name: Prepare the previous Release snapshot
+        id: prepare
         shell: bash
         run: |
-          if git diff --quiet -- frontend/public/data/recommendations.json; then
-            echo "Recommendation data is unchanged."
-            exit 0
+          set -euo pipefail
+          data_dir="$RUNNER_TEMP/nxc-recommendations"
+          data_file="$data_dir/recommendations.json"
+          mkdir -p "$data_dir"
+
+          if gh release view recommendations-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # Use the last published dataset as the comparison baseline. Do not
+            # overwrite the checked-in offline fallback used by packaged builds.
+            gh release download recommendations-latest \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern recommendations.json \
+              --dir "$data_dir"
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
+          else
+            cp frontend/public/data/recommendations.json "$data_file"
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/public/data/recommendations.json
-          git commit -m "chore: update Arch pkgstats recommendations"
-          git push
+          echo "output_file=$data_file" >> "$GITHUB_OUTPUT"
+          echo "previous_hash=$(sha256sum "$data_file" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Generate recommendation data
+        id: generate
+        env:
+          NXC_RECOMMENDATIONS_OUTPUT: ${{ steps.prepare.outputs.output_file }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node frontend/scripts/update-recommendations.mjs
+          echo "current_hash=$(sha256sum "$NXC_RECOMMENDATIONS_OUTPUT" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish a versioned snapshot and update the rolling Release asset
+        if: steps.prepare.outputs.has_release != 'true' || steps.prepare.outputs.previous_hash != steps.generate.outputs.current_hash
+        shell: bash
+        env:
+          DATA_FILE: ${{ steps.prepare.outputs.output_file }}
+        run: |
+          set -euo pipefail
+          tag="recommendations-$(date -u +'%Y%m%dT%H%M%SZ')-$GITHUB_RUN_ID"
+          generated_at="$(node -e 'const d = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(d.generatedAt ?? "unknown")' "$DATA_FILE")"
+          period="$(node -e 'const d = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(d.period ? `${d.period.startMonth}-${d.period.endMonth}` : "unknown")' "$DATA_FILE")"
+          notes="$RUNNER_TEMP/nxc-recommendation-release-notes.md"
+
+          cat > "$notes" <<EOF
+          Machine-generated recommendation dataset for NXC LOUNGE.
+
+          - Source: https://pkgstats.archlinux.de/api/doc
+          - Statistics period: $period
+          - Generated at: $generated_at
+          - Artifact: recommendations.json
+
+          The upstream API documentation reviewed by this project did not specify an explicit redistribution license for the statistics payload. Publishing this artifact does not establish or grant rights to the upstream data. See THIRD_PARTY_NOTICES.md in the source repository for the current review status.
+          EOF
+
+          # Keep an immutable, versioned snapshot for inspection and rollback.
+          gh release create "$tag" "$DATA_FILE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "NXC recommendation dataset $tag" \
+            --notes-file "$notes" \
+            --latest=false
+
+          # This stable asset URL is the one used by the desktop app. It is
+          # updated only when the generated dataset changes.
+          if gh release view recommendations-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload recommendations-latest "$DATA_FILE" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
+            gh release edit recommendations-latest \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "NXC recommendation dataset (rolling latest)" \
+              --notes-file "$notes"
+          else
+            gh release create recommendations-latest "$DATA_FILE" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "NXC recommendation dataset (rolling latest)" \
+              --notes-file "$notes" \
+              --prerelease
+          fi
+
+      - name: Report unchanged dataset
+        if: steps.prepare.outputs.has_release == 'true' && steps.prepare.outputs.previous_hash == steps.generate.outputs.current_hash
+        run: echo "Recommendation data is unchanged; no Release asset was updated."
