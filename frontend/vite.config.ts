@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync, type Dirent } from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
@@ -58,9 +58,9 @@ function packageRootForImport(specifier: string): string | undefined {
 
 function collectLicenseFiles(packageRoot: string): PackageLicense['files'] {
   const candidates: string[] = []
-  let entries: ReturnType<typeof readdirSync>
+  let entries: Dirent[]
   try {
-    entries = readdirSync(packageRoot, { withFileTypes: true }) as ReturnType<typeof readdirSync>
+    entries = readdirSync(packageRoot, { withFileTypes: true })
   } catch {
     return []
   }
