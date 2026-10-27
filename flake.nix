@@ -26,6 +26,7 @@
       devShells.${system}.default = pkgs.mkShell {
         nativeBuildInputs = with pkgs; [
           cargo
+          curl
           nodejs
           pkg-config
           pnpm
@@ -145,7 +146,8 @@ EOF
 
             wrapProgram "$out/bin/nxc-app" \
               --set NXC_APPSTREAM_DATA ${appstreamData} \
-              --prefix GSETTINGS_SCHEMAS_PATH : ${gsettingsSchemasPath}
+              --prefix GSETTINGS_SCHEMAS_PATH : ${gsettingsSchemasPath} \
+              --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.curl ]}
 
             # Fail the build if the app launcher contract or its static assets
             # drift away from the command and icon names used by the package.
