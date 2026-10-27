@@ -35,14 +35,9 @@ any required attribution still need review before release.
 
 ## Arch Linux pkgstats recommendation statistics
 
-`frontend/public/data/recommendations.json` is a derived snapshot made by
-`frontend/scripts/update-recommendations.mjs` from the public
-[Arch Linux pkgstats API](https://pkgstats.archlinux.de/api/doc). The
-`.github/workflows/update-recommendations.yml` workflow refreshes and commits
-that file. The JSON identifies the source, source URL, observation period, and
-the time its recommendation values last changed (the generator intentionally preserves this timestamp when a refresh produces identical content). The GUI now displays and links the
-source and displays the statistics period alongside the content-generation
-date.
+The checked-in `frontend/public/data/recommendations.json` is a bundled fallback snapshot for the first render and offline use. The scheduled workflow generates current data into the runner's temporary directory, compares it against the prior rolling Release asset, and publishes an immutable versioned Release when the dataset changes. It also updates the public [`recommendations-latest` Release](https://github.com/nxc-project/nixos-json-controller/releases/tag/recommendations-latest), whose `recommendations.json` asset is fetched by the Tauri backend. The automatically generated dataset is no longer committed to the repository on every refresh.
+
+The JSON contains the source, source URL, observation period, and `generatedAt` timestamp. The GUI displays the source, statistics period, and last-content-update date. If a new Release cannot be fetched, the application retains its usable cache or bundled fallback instead of replacing it with an empty result.
 
 The API documentation inspected for this audit describes the read-only
 statistics API and its response fields, but does not specify an explicit
