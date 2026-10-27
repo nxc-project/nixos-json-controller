@@ -26,6 +26,9 @@ test("Discover pre-search UI shows, hides, and restores recommendations as the q
             query,
             hasRecommendations: props.hasRecommendations ?? true,
             generatedAt: "2026-10-15T00:00:00.000Z",
+            source: props.source ?? "Arch Linux pkgstats",
+            sourceUrl: props.sourceUrl ?? "https://pkgstats.archlinux.de/api/doc",
+            period: props.period ?? { startMonth: 202510, endMonth: 202609 },
             loading: false,
             recommendationStatus: props.recommendationStatus ?? "ready",
             recommendationMessage: props.recommendationMessage ?? null,
@@ -41,6 +44,10 @@ test("Discover pre-search UI shows, hides, and restores recommendations as the q
 
     const emptyQuery = render("");
     assert.match(emptyQuery, /人気のアプリ/);
+    assert.match(emptyQuery, /Arch Linux pkgstats/);
+    assert.match(emptyQuery, /https:\/\/pkgstats\.archlinux\.de\/api\/doc/);
+    assert.match(emptyQuery, /統計期間 2025年10月〜2026年9月/);
+    assert.match(emptyQuery, /データ更新日/);
     assert.match(emptyQuery, /Firefox/);
     assert.match(emptyQuery, /data-recommendation-card/);
 
