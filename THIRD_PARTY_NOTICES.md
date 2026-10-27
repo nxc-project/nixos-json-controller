@@ -35,7 +35,7 @@ any required attribution still need review before release.
 
 ## Arch Linux pkgstats recommendation statistics
 
-The checked-in `frontend/public/data/recommendations.json` is a bundled fallback snapshot for the first render and offline use. The scheduled workflow generates current data into the runner's temporary directory, compares it against the prior rolling Release asset, and publishes an immutable versioned Release when the dataset changes. It also updates the public [`recommendations-latest` Release](https://github.com/nxc-project/nixos-json-controller/releases/tag/recommendations-latest), whose `recommendations.json` asset is fetched by the Tauri backend. The automatically generated dataset is no longer committed to the repository on every refresh.
+The checked-in `frontend/public/data/recommendations.json` is a bundled fallback snapshot for the first render and offline use. The scheduled workflow generates current data into the runner's temporary directory, compares it against the prior rolling Release asset, and publishes a timestamped versioned Release when the dataset changes. It also updates the public [`recommendations-latest` Release](https://github.com/nxc-project/nixos-json-controller/releases/tag/recommendations-latest), whose `recommendations.json` asset is fetched by the Tauri backend. The automatically generated dataset is no longer committed to the repository on every refresh.
 
 The JSON contains the source, source URL, observation period, and `generatedAt` timestamp. The GUI displays the source, statistics period, and last-content-update date. If a new Release cannot be fetched, the application retains its usable cache or bundled fallback instead of replacing it with an empty result.
 
@@ -50,10 +50,11 @@ do not themselves establish permission to redistribute. This item needs
 confirmation from the data provider or a documented decision to use a source
 whose redistribution terms are explicit.
 
-Until that confirmation or decision is recorded, this audit does not mark the
-pkgstats snapshot as cleared for distribution. The data, scheduled update
-workflow, and recommendation feature are retained; this change does not remove
-or silently disable them.
+This audit does not mark the pkgstats snapshot as cleared for distribution.
+The current task is closed after recording the source, the unresolved terms,
+and the implemented distribution design; closure does not mean that permission
+to redistribute the upstream data has been confirmed. The data, scheduled
+update workflow, and recommendation feature remain in place.
 
 - [pkgstats API documentation](https://pkgstats.archlinux.de/api/doc)
 - [pkgstats server source repository](https://github.com/archlinux-de/pkgstats.archlinux.de)
