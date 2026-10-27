@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import appLogo from "../../src-tauri/icons/nxc-app.svg";
 import {
   BookOpen,
   Briefcase,
@@ -14,7 +15,6 @@ import {
   Search,
   Settings,
   SlidersHorizontal,
-  Store,
   Terminal,
   type LucideIcon,
 } from "lucide-react";
@@ -723,8 +723,13 @@ function Discover() {
         <aside className="hidden w-64 shrink-0 bg-sidebar lg:block">
           <div className="sticky top-10 flex h-[calc(100vh-2.5rem)] flex-col p-6">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-white shadow-sm shadow-blue-500/25">
-                <Store className="size-5" />
+              <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm">
+                <img
+                  src={appLogo}
+                  alt=""
+                  aria-hidden="true"
+                  className="size-full object-contain"
+                />
               </div>
               <div>
                 <p className="font-semibold tracking-tight">NXC LOUNGE</p>
