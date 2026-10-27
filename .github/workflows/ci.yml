@@ -108,11 +108,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Temporary formatting diagnostic
-        run: |
-          pnpm exec prettier src/pages/DiscoverPreSearch.tsx --write
-          git diff -- src/pages/DiscoverPreSearch.tsx
-
       - name: Check frontend formatting
         run: pnpm format:check
 
