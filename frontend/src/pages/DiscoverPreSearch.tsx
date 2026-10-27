@@ -20,6 +20,11 @@ type DiscoverPreSearchProps = {
   children: ReactNode;
 };
 
+/** Only link the known pkgstats API host from the recommendation metadata. */
+function isPkgstatsSourceUrl(sourceUrl: string): boolean {
+  return /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(sourceUrl)
+}
+
 /** Format pkgstats' YYYYMM month value for user-facing attribution. */
 function formatRecommendationMonth(value: number): string {
   return `${Math.floor(value / 100)}年${value % 100}月`;
@@ -137,23 +142,19 @@ export default function DiscoverPreSearch({
           </p>
         </div>
         <div className="shrink-0 text-xs leading-5 text-foreground/60">
-          {source &&
-            sourceUrl &&
-            /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(
-              sourceUrl,
-            ) && (
-              <p>
-                統計元{" "}
-                <a
-                  className="underline underline-offset-2 hover:text-foreground"
-                  href={sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {source}
-                </a>
-              </p>
-            )}
+          {source && sourceUrl && isPkgstatsSourceUrl(sourceUrl) && (
+            <p>
+              統計元{" "}
+              <a
+                className="underline underline-offset-2 hover:text-foreground"
+                href={sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {source}
+              </a>
+            </p>
+          )}
           {period && (
             <p>
               統計期間 {formatRecommendationMonth(period.startMonth)}〜
