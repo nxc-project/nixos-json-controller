@@ -47,7 +47,7 @@ test("Discover pre-search UI shows, hides, and restores recommendations as the q
     assert.match(emptyQuery, /Arch Linux pkgstats/);
     assert.match(emptyQuery, /https:\/\/pkgstats\.archlinux\.de\/api\/doc/);
     assert.match(emptyQuery, /統計期間 2025年10月〜2026年9月/);
-    assert.match(emptyQuery, /データ更新日/);
+    assert.match(emptyQuery, /内容の最終更新日/);
     assert.match(emptyQuery, /Firefox/);
     assert.match(emptyQuery, /data-recommendation-card/);
 
