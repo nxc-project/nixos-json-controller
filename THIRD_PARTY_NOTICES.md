@@ -40,7 +40,7 @@ any required attribution still need review before release.
 [Arch Linux pkgstats API](https://pkgstats.archlinux.de/api/doc). The
 `.github/workflows/update-recommendations.yml` workflow refreshes and commits
 that file. The JSON identifies the source, source URL, observation period, and
-the time its content was last generated. The GUI now displays and links the
+the time its recommendation values last changed (the generator intentionally preserves this timestamp when a refresh produces identical content). The GUI now displays and links the
 source and displays the statistics period alongside the content-generation
 date.
 
