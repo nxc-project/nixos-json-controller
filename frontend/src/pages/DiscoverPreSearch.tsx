@@ -140,18 +140,18 @@ export default function DiscoverPreSearch({
           {source &&
             sourceUrl &&
             /^https:\/\/pkgstats\.archlinux\.de(?:\/|$)/i.test(sourceUrl) && (
-              <p>
-                統計元{" "}
-                <a
-                  className="underline underline-offset-2 hover:text-foreground"
-                  href={sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {source}
-                </a>
-              </p>
-            )}
+            <p>
+              統計元{" "}
+              <a
+                className="underline underline-offset-2 hover:text-foreground"
+                href={sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {source}
+              </a>
+            </p>
+          )}
           {period && (
             <p>
               統計期間 {formatRecommendationMonth(period.startMonth)}〜
