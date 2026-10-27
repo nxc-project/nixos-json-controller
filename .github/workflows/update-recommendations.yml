@@ -58,7 +58,8 @@ jobs:
           fi
 
           echo "output_file=$data_file" >> "$GITHUB_OUTPUT"
-          echo "previous_hash=$(sha256sum "$data_file" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+          previous_hash="$(sha256sum "$data_file" | cut -d ' ' -f 1)"
+          echo "previous_hash=$previous_hash" >> "$GITHUB_OUTPUT"
 
       - name: Generate recommendation data
         id: generate
@@ -68,7 +69,8 @@ jobs:
         run: |
           set -euo pipefail
           node frontend/scripts/update-recommendations.mjs
-          echo "current_hash=$(sha256sum "$NXC_RECOMMENDATIONS_OUTPUT" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+          current_hash="$(sha256sum "$NXC_RECOMMENDATIONS_OUTPUT" | cut -d ' ' -f 1)"
+          echo "current_hash=$current_hash" >> "$GITHUB_OUTPUT"
 
       - name: Publish a versioned snapshot and update the rolling Release asset
         if: steps.prepare.outputs.has_release != 'true' || steps.prepare.outputs.previous_hash != steps.generate.outputs.current_hash
