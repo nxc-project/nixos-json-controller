@@ -1,3 +1,5 @@
+import { invoke } from "@tauri-apps/api/core";
+
 export type RecommendationRecord = {
   id: string;
   archPackage: string;
@@ -30,8 +32,6 @@ export type CachedRecommendations = {
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 const BUNDLED_DATA_URL = "/data/recommendations.json";
-const LATEST_DATA_URL =
-  "https://raw.githubusercontent.com/Ni-gihub/nixos-json-controller/main/frontend/public/data/recommendations.json";
 const RECOMMENDATION_CACHE_KEY = "nxc.app-store.recommendations.v2";
 export const RECOMMENDATION_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -272,16 +272,24 @@ export async function loadBundledRecommendations(
   );
 }
 
-/** Fetch the latest generated JSON; callers decide when the cached value should be refreshed. */
+/**
+ * Fetch the latest Release snapshot through the Tauri backend.
+ *
+ * The backend downloads the fixed GitHub Release URL with curl so the WebView
+ * does not depend on cross-origin access to GitHub's release-asset CDN.
+ * A loader can be injected by tests; the packaged fallback remains available
+ * when the network or a Release asset is unavailable.
+ */
 export async function loadLatestRecommendations(
-  fetcher: typeof fetch = fetch,
+  latestLoader: () => Promise<unknown> = () =>
+    invoke<unknown>("fetch_latest_recommendations"),
 ): Promise<RecommendationDocument | undefined> {
-  const separator = LATEST_DATA_URL.includes("?") ? "&" : "?";
-  const latest = await readRecommendationData(
-    `${LATEST_DATA_URL}${separator}t=${Date.now()}`,
-    fetcher,
-  );
+  try {
+    const latest = parseRecommendationData(await latestLoader());
 
-  // An empty remote file should not replace the last known usable recommendation list.
-  return latest?.recommendations.length ? latest : undefined;
+    // An empty or malformed remote file must not replace usable local data.
+    return latest?.recommendations.length ? latest : undefined;
+  } catch {
+    return undefined;
+  }
 }
