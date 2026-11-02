@@ -6,7 +6,7 @@
 
 実装: frontend/src/components/ui/input.tsx
 
-現行 Input は Base UI Input を包み、w-full、min-w-0、rounded-lg、border-input、focus-visible ring、disabled / invalid 状態を持ちます。標準の高さは 32px です。
+現行 Input は Base UI Input を包み、w-full、min-w-0、rounded-lg、border-input、focus-visible ring、disabled / invalid 状態を持ちます。標準の高さは 32px です。通常時は `bg-transparent` で、親の surface を透過して表示します。ダークテーマでは `dark:bg-input/30` が適用され、disabled 状態では `disabled:bg-input/50`（ダークでは `dark:disabled:bg-input/80`）、invalid 状態では境界線と ring の色が上書きされます。
 
 - 入力欄には常に視覚的ラベルまたは明確な accessible name を付けます。
 - placeholder は入力例や補足であり、ラベルの代用にしません。

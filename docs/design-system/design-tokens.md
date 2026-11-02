@@ -106,7 +106,10 @@ Tailwind の標準値を優先し、任意値を増やす前に既存 scale で�
 | xl | --radius × 1.4 | カード |
 | 2xl | --radius × 1.8 | 大きなタイル |
 | 3xl | --radius × 2.2 | 大きなパネル |
+| 4xl | --radius × 2.6（1.95rem） | 最大サイズの角丸・pill 型部品 |
 | full | 9999px | バッジ・pill |
+
+`--radius` は `0.75rem` です。`4xl` の `1.95rem` は `--radius × 2.6` に相当します。
 
 ## 追加・変更ルール
 

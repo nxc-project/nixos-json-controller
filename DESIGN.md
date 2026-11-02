@@ -71,6 +71,7 @@ rounded:
   xl: 16.8px
   2xl: 21.6px
   3xl: 26.4px
+  4xl: 1.95rem
   full: 9999px
 components:
   button-primary:
@@ -86,7 +87,7 @@ components:
     rounded: "{rounded.lg}"
     height: 32px
   input:
-    backgroundColor: "{colors.background}"
+    backgroundColor: "transparent"
     textColor: "{colors.foreground}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
@@ -147,6 +148,8 @@ Geist Variable を基本書体とし、サイズ・ウェイト・行間で階�
 ## Components
 
 既存実装の共通部品と NXC 固有の部品を組み合わせます。Button / Input / Card / Badge は frontend/src/components/ui/ が実装の正本です。アプリカードやインストール操作などのプロダクト固有部品は frontend/src/components/ にあります。
+
+YAML の `components.input.backgroundColor` は現行 Input の通常時（ライトテーマ）の `bg-transparent` を表します。ダークテーマでは `dark:bg-input/30` が上書きし、disabled / invalid 状態にも個別の背景指定があります。これは全状態共通の塗り色や、未実装の推奨値を示すものではありません。
 
 新しい画面で既存部品を独自に再実装せず、既存の variant・状態・余白を優先します。詳細は docs/design-system/components/ を参照してください。
 
