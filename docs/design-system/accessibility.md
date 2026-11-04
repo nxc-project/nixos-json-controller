@@ -35,7 +35,7 @@
 
 ## 現状と確認対象
 
-現行実装では Button / Input に focus-visible のリングがあり、InstallProgressIndicator は status と polite live region を使い、カルーセルは region 名とキーボードフォーカスを提供しています。また、いくつかのモーションは prefers-reduced-motion に対応しています。
+現行実装では Button / Input に focus-visible のリングがあり、InstallProgressIndicator は status と polite live region を使い、カルーセルは region 名とキーボードフォーカスを提供しています。また、いくつかのモーションは prefers-reduced-motion に対応しています。AppCard のアイコン詳細リンクにはアプリ名を含む accessible name を設定し、リンク内の AppIcon は装飾扱いにしています。InstallButton のパスワード入力欄にも `aria-label="パスワード"` を設定しています。
 
 一方で、この初期文書の作成時点では、すべての画面のコントラスト測定、キーボードだけでの全操作確認、スクリーンリーダー実機確認を完了していません。InstallButton のパスワードパネルは独自 overlay 実装であり、dialog としての role、フォーカストラップ、閉じた後のフォーカス復帰を継続確認する必要があります。文書化をもって適合済みとは扱いません。
 

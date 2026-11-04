@@ -284,6 +284,7 @@ function InstallButtonInstance({
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="パスワード"
+              aria-label="パスワード"
               autoComplete="current-password"
             />
             <div className="mt-6 flex justify-end gap-2">
