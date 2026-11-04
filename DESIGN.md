@@ -151,6 +151,8 @@ Geist Variable を基本書体とし、サイズ・ウェイト・行間で階�
 
 YAML の `components.input.backgroundColor` は現行 Input の通常時（ライトテーマ）の `bg-transparent` を表します。ダークテーマでは `dark:bg-input/30` が上書きし、disabled 状態には `disabled:bg-input/50` と `dark:disabled:bg-input/80` の背景指定があります。`aria-invalid` 状態は境界線と ring を変更しますが、背景は変更しません。これは全状態共通の塗り色や、未実装の推奨値を示すものではありません。
 
+YAML の `components.input.typography` は基準となる `body`（16px）を表します。現行 Input は `text-base`（16px）を基本とし、`md` 以上の幅では `md:text-sm`（14px）に切り替わります。YAML はこのレスポンシブな上書きを表現していないため、既存 Input のサイズはコンポーネント実装を正本とします。
+
 新しい画面で既存部品を独自に再実装せず、既存の variant・状態・余白を優先します。詳細は docs/design-system/components/ を参照してください。
 
 ## Do's and Don'ts
