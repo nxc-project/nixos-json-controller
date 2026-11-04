@@ -40,16 +40,19 @@ function AppCard({
       <div className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-4 sm:grid-cols-[4.5rem_minmax(0,1fr)_9rem]">
         <Link
           to={detailPath}
+          aria-label={`${name} の詳細を表示`}
           className="row-span-3 flex size-16 shrink-0 items-center justify-center self-start rounded-2xl border border-primary/10 bg-primary/5 text-xl font-bold text-primary shadow-sm transition-transform duration-200 motion-reduce:transition-none group-hover:scale-[1.03] motion-reduce:group-hover:scale-100"
         >
-          <AppIcon
-            name={name}
-            packageId={id}
-            icon={icon}
-            iconCandidates={iconCandidates}
-            imageClassName="size-12 object-contain"
-            fallbackClassName="size-8 text-foreground/70"
-          />
+          <span aria-hidden="true">
+            <AppIcon
+              name={name}
+              packageId={id}
+              icon={icon}
+              iconCandidates={iconCandidates}
+              imageClassName="size-12 object-contain"
+              fallbackClassName="size-8 text-foreground/70"
+            />
+          </span>
         </Link>
 
         <Link to={detailPath} className="min-w-0">
